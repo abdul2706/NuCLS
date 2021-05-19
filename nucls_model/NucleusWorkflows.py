@@ -7,26 +7,18 @@ from pandas import Series, DataFrame, read_csv, concat
 import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
 from shutil import copyfile
-from histomicstk.annotations_and_masks.annotations_to_masks_handler import \
-    _visualize_annotations_on_rgb
-from histomicstk.annotations_and_masks.masks_to_annotations_handler import \
-    get_contours_from_mask
-from histomicstk.features.compute_nuclei_features import \
-    compute_nuclei_features
-from histomicstk.preprocessing.color_deconvolution import \
-    color_deconvolution_routine
+from histomicstk.annotations_and_masks.annotations_to_masks_handler import _visualize_annotations_on_rgb
+from histomicstk.annotations_and_masks.masks_to_annotations_handler import get_contours_from_mask
+from histomicstk.features.compute_nuclei_features import compute_nuclei_features
+from histomicstk.preprocessing.color_deconvolution import color_deconvolution_routine
 
 from GeneralUtils import maybe_mkdir
-from nucls_model.DataLoadingUtils import NucleusDataset, \
-    get_cv_fold_slides, _crop_all_to_fov, NucleusDatasetMask, \
-    NucleusDatasetMask_IMPRECISE
+from nucls_model.DataLoadingUtils import NucleusDataset, get_cv_fold_slides, _crop_all_to_fov, NucleusDatasetMask, NucleusDatasetMask_IMPRECISE
 import nucls_model.PlottingUtils as pu
 from nucls_model.FasterRCNN import FasterRCNN
 from nucls_model.PartialMaskRCNN import PartialMaskRCNN
-from nucls_model.ModelRunner import trainNucleusModel, load_ckp, \
-    evaluateNucleusModel
-from configs.nucleus_model_configs import CoreSetQC, CoreSetNoQC, \
-    EvalSets, VisConfigs
+from nucls_model.ModelRunner import trainNucleusModel, load_ckp, evaluateNucleusModel
+from configs.nucleus_model_configs import CoreSetQC, CoreSetNoQC, EvalSets, VisConfigs
 import nucls_model.torchvision_detection_utils.transforms as tvdt
 from nucls_model.MiscUtils import map_bboxes_using_hungarian_algorithm
 from nucls_model.DataFormattingUtils import parse_sparse_mask_for_use
@@ -245,8 +237,7 @@ def run_one_maskrcnn_fold(
     # %% --------------------------------------------------------------
     # Prep data loaders
 
-    train_slides, test_slides = get_cv_fold_slides(
-        train_test_splits_path=CoreSetQC.train_test_splits_path, fold=fold)
+    train_slides, test_slides = get_cv_fold_slides(train_test_splits_path=CoreSetQC.train_test_splits_path, fold=fold)
 
     # copy train/test slides with model itself just to be safe
     for tr in ('train', 'test'):
@@ -286,10 +277,8 @@ def run_one_maskrcnn_fold(
     if train:
         trainNucleusModel(
             model=model, checkpoint_path=checkpoint_path,
-            data_loader=DataLoader(
-                dataset=train_dataset, **cfg.MaskDatasetConfigs.train_loader),
-            data_loader_test=DataLoader(
-                dataset=test_dataset, **cfg.MaskDatasetConfigs.test_loader),
+            data_loader=DataLoader(dataset=train_dataset, **cfg.MaskDatasetConfigs.train_loader),
+            data_loader_test=DataLoader(dataset=test_dataset, **cfg.MaskDatasetConfigs.test_loader),
             **cfg.MaskRCNNConfigs.training_params)
 
     elif os.path.exists(checkpoint_path):

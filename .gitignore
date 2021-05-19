@@ -1,6 +1,7 @@
 logs/
-data/
+data/tcga-nucleus/v4_2020-04-05_FINAL_CORE/CORE_SET/QC/
 results/
+HistomicsTK/
 .idea/
 .*.swp
 *.tif

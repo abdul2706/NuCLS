@@ -1,19 +1,19 @@
-import sys
+import os
 from os.path import join as opj
+import sys
 from torchvision.models.detection.rpn import AnchorGenerator
 from torchvision.ops import MultiScaleRoIAlign
 from copy import deepcopy
 
-BASEPATH = opj(os.path.expanduser('~'), 'Desktop', 'NuCLS')
+TAG = '[nucleus_model_configs.py]'
+BASEPATH = os.path.realpath('.')
 sys.path.insert(0, BASEPATH)
 from GeneralUtils import reverse_dict  # noqa
 from configs.nucleus_style_defaults import NucleusCategories  # noqa
-from nucls_model.DataLoadingUtils import save_cv_train_test_splits, \
-    get_transform  # noqa
+from nucls_model.DataLoadingUtils import save_cv_train_test_splits, get_transform  # noqa
 from nucls_model.torchvision_detection_utils.utils import collate_fn  # noqa
 from nucls_model.FeatureExtractor import FeatureExtractor  # noqa
-from nucls_model.FasterRCNN import ClassificationConvolutions, \
-    SelfAttentionEncoder  # noqa
+from nucls_model.FasterRCNN import ClassificationConvolutions, SelfAttentionEncoder  # noqa
 from nucls_model.MaskRCNN import MaskRCNNHeads  # noqa
 
 
@@ -21,11 +21,11 @@ class CoreSetQC(object):
     """paths and configs related to the QCd core set."""
 
     dname = 'v4_2020-04-05_FINAL_CORE'
-    dataset_root = opj(BASEPATH, f'data/tcga-nucleus/{dname}/CORE_SET/QC/')
-    dbpath = opj(BASEPATH, f'data/tcga-nucleus/{dname}/{dname}.sqlite')
+    dataset_root = opj(BASEPATH, 'data', 'tcga-nucleus', dname, 'CORE_SET', 'QC')
+    dbpath = opj(BASEPATH, 'data', 'tcga-nucleus', dname, f'{dname}.sqlite')
     dataset_name = dname + '_QC'
 
-    train_test_splits_path = opj(dataset_root, 'train_test_splits/')
+    train_test_splits_path = opj(dataset_root, 'train_test_splits')
 
     # # split to training and testing
     # save_cv_train_test_splits(

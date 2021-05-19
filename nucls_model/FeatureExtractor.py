@@ -1,13 +1,15 @@
 # Modified from Matthias Hamacher
 # https://github.com/CancerDataScience/CellDetectionCenterpoint/
 # See: https://pytorch.org/docs/stable/torchvision/models.html
-
+import os
 import sys
 from torch.nn import Module
 from torchvision import models
-BASEPATH = "/home/mtageld/Desktop/cTME/"
+
+TAG = '[FeatureExtractor.py]'
+BASEPATH = os.path.realpath('.')
 sys.path.insert(0, BASEPATH)
-from nucl_model.BackboneSwitcher import BackboneSwitcher as bbs
+from nucls_model.BackboneSwitcher import BackboneSwitcher as bbs
 
 
 class FeatureExtractor(Module):

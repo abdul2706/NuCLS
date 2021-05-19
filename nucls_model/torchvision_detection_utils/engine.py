@@ -24,7 +24,7 @@ def train_one_epoch(
         model, device, optimizer, data_loader, effective_batch_size=None,
         epoch=1, lr_scheduler=None, loss_weights=None,
         print_freq=1, window_size=20):
-    model.training()
+    model.train()
     metric_logger = utils.MetricLogger(delimiter="  ", window_size=window_size)
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)

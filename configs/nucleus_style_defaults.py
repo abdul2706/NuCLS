@@ -4,16 +4,18 @@ Created on Fri Jul 27 16:37:21 2018
 
 @author: tageldim
 """
+import os
+from os.path import join as opj
 import sys
+
 from pandas import read_sql_query, DataFrame, read_csv
 from typing import Union
 from collections import OrderedDict
 
-import os
-from os.path import join as opj
-BASEPATH = opj(os.path.expanduser('~'), 'Desktop', 'NuCLS')
+TAG = '[nucleus_style_defaults.py]'
+BASEPATH = os.path.realpath('.')
 sys.path.insert(0, BASEPATH)
-from ctme.GeneralUtils import ordered_vals_from_ordered_dict  # noqa
+from GeneralUtils import ordered_vals_from_ordered_dict  # noqa
 
 # %%===========================================================================
 # Default nucleus styles
@@ -102,7 +104,8 @@ class DefaultAnnotationStyles(object):
             STANDARD_STYLES[stylename]["fillColor"] = fillColor
 
     # GT codes dict for parsing into label mask
-    GTCODE_PATH = opj(BASEPATH, 'ctme/configs/nucleus_GTcodes.csv')
+    GTCODE_PATH = opj(BASEPATH, 'configs', 'nucleus_GTcodes.csv')
+    print(TAG, '[GTCODE_PATH]', GTCODE_PATH)
     gtcodes_df = read_csv(GTCODE_PATH)
     gtcodes_df.index = gtcodes_df.loc[:, 'group']
     gtcodes_dict = gtcodes_df.to_dict(orient='index')

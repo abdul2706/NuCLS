@@ -1,27 +1,30 @@
 import os
 from os.path import join as opj
+import sys
 
 import numpy as np
-from histomicstk.annotations_and_masks.annotation_and_mask_utils import \
-    np_vec_no_jit_iou
+from histomicstk.annotations_and_masks.annotation_and_mask_utils import np_vec_no_jit_iou
 from scipy.optimize import linear_sum_assignment
 from pandas import DataFrame, read_csv, concat
 
+TAG = '[MiscUtils.py]'
+BASEPATH = os.path.realpath('.')
+sys.path.insert(0, BASEPATH)
 from GeneralUtils import load_configs  # noqa
 
 
-def load_saved_otherwise_default_model_configs(configs_path,
-                                               warn=True, purec=False):
-    if os.path.exists(configs_path):
+def load_saved_otherwise_default_model_configs(configs_path, warn=True, purec=False):
+    # if os.path.exists(configs_path):
+    if False:
         if warn:
             input(f"Loading existing configs from: {configs_path}. Continue?")
         cfg = load_configs(configs_path=configs_path)
     else:
         print("Loading default configs")
         if not purec:
-            import ctme.configs.nucleus_model_configs as cfg
+            import configs.nucleus_model_configs as cfg
         else:
-            import ctme.configs.pure_classification_model_configs as cfg
+            import configs.pure_classification_model_configs as cfg
     return cfg
 
 

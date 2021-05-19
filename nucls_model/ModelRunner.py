@@ -7,8 +7,7 @@ from pandas import DataFrame
 import numpy as np
 import pickle
 
-from nucls_model.torchvision_detection_utils.engine import \
-    train_one_epoch, evaluate
+from nucls_model.torchvision_detection_utils.engine import train_one_epoch, evaluate
 import nucls_model.PlottingUtils as pu
 
 
@@ -250,8 +249,7 @@ def trainNucleusModel(
         loss_weights = {k: v / mxl for k, v in loss_weights.items()}
 
     # train on the GPU or on the CPU, if a GPU is not available
-    device = torch.device('cuda') if torch.cuda.is_available() else \
-        torch.device('cpu')
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     # NOTE:
     #  The torch data parallelism loads all images into ONE GPU
@@ -300,14 +298,11 @@ def trainNucleusModel(
     #     model = model.to(torch.float16)
 
     # construct an optimizer
-    optimizer = _get_optimizer(
-        model=model, optimizer_type=optimizer_type,
-        optimizer_params=optimizer_params)
+    optimizer = _get_optimizer(model=model, optimizer_type=optimizer_type, optimizer_params=optimizer_params)
 
     # load weights and optimizer state
     if os.path.exists(checkpoint_path):
-        ckpt = load_ckp(
-            checkpoint_path=checkpoint_path, model=model, optimizer=optimizer)
+        ckpt = load_ckp(checkpoint_path=checkpoint_path, model=model, optimizer=optimizer)
         model = ckpt['model']
         optimizer = ckpt['optimizer']
         start_epoch = ckpt['epoch']
@@ -323,12 +318,8 @@ def trainNucleusModel(
             'step_size': 50,
             'gamma': 0.1,
         }
-        grup = -1 if start_epoch == 1 else \
-            (start_epoch - 1) * data_loader.batch_size
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(
-            optimizer=optimizer, last_epoch=grup,
-            **lr_scheduler_params
-        )
+        grup = -1 if start_epoch == 1 else (start_epoch - 1) * data_loader.batch_size
+        lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, last_epoch=grup, **lr_scheduler_params)
     else:
         raise NotImplementedError(f'Unknown lr_scheduler: {lr_scheduler_type}')
 
@@ -346,12 +337,8 @@ def trainNucleusModel(
     for epoch in range(start_epoch, n_epochs + 1):
 
         # Maybe freeze detection, but keep training classification
-        if (not frozen_det) and (
-                (epoch - 1) * grups_per_epoch > freeze_det_after):
-            model, optimizer = _freeze_detection(
-                model=model, optimizer_type=optimizer_type,
-                optimizer_params=optimizer_params,
-            )
+        if (not frozen_det) and ((epoch - 1) * grups_per_epoch > freeze_det_after):
+            model, optimizer = _freeze_detection(model=model, optimizer_type=optimizer_type, optimizer_params=optimizer_params)
             frozen_det = True
 
         # train for one epoch
@@ -427,8 +414,7 @@ def evaluateNucleusModel(
         model = ckpt['model']
 
     # evaluate on the GPU or on the CPU, if a GPU is not available
-    device = torch.device('cuda') if torch.cuda.is_available() else \
-        torch.device('cpu')
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
     # get performance at all requested testtime augmentation levels
     tsls = []

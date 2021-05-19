@@ -1,36 +1,34 @@
+import os
+from os.path import join as opj
 from collections import Counter
 from copy import deepcopy
 from imageio import imread
 import numpy as np
-import os
-from os.path import join as opj
-from pandas import DataFrame, read_sql_query, read_csv
+import pandas as pd
 import matplotlib.pylab as plt
 import torch
 from PIL import Image
 from sklearn.model_selection import KFold
+from tqdm import tqdm
 
-from GeneralUtils import connect_to_sqlite, reverse_dict  # noqa
 import nucls_model.torchvision_detection_utils.transforms as tvdt  # noqa
+from GeneralUtils import connect_to_sqlite, reverse_dict  # noqa
 from nucls_model.torchvision_detection_utils.utils import collate_fn  # noqa
-from configs.nucleus_style_defaults import Interrater, \
-    DefaultAnnotationStyles, NucleusCategories  # noqa
+from configs.nucleus_style_defaults import Interrater, DefaultAnnotationStyles, NucleusCategories  # noqa
 from nucls_model.DataFormattingUtils import from_dense_to_sparse_object_mask  # noqa
 from TorchUtils import transform_dlinput  # noqa
 
-
+TAG = '[DataLoadingUtils.py]'
 ISCUDA = torch.cuda.is_available()
 # FDTYPE = torch.float16 if ISCUDA else torch.float32
 FDTYPE = torch.float32
 
 
 # noinspection PyShadowingNames
-def _save_slides_for_fold(
-        slides_list: list, fold: int, is_training: bool, savepath: str):
+def _save_slides_for_fold(slides_list: list, fold: int, is_training: bool, savepath: str):
     trainstr = 'train' if is_training else 'test'
-    slidesdf = DataFrame(slides_list, columns=['slide_name'])
-    slidesdf.loc[:, 'hospital'] = [
-        sld.split('TCGA-')[1].split('-')[0] for sld in slides_list]
+    slidesdf = pd.DataFrame(slides_list, columns=['slide_name'])
+    slidesdf.loc[:, 'hospital'] = [sld.split('TCGA-')[1].split('-')[0] for sld in slides_list]
     slidesdf.loc[:, 'type'] = trainstr
     slidesdf.loc[:, 'fold'] = fold
     slidesdf.to_csv(opj(savepath, f'fold_{fold}_{trainstr}.csv'))
@@ -41,26 +39,18 @@ def _save_cv_splits_by_slide(slides, n_folds, savepath, random_state=0):
     kf = KFold(n_splits=n_folds, random_state=random_state, shuffle=True)
     fold = 0
     for train_idxs, test_idxs in kf.split(slides):
-        _save_slides_for_fold(
-            slides_list=slides[train_idxs], fold=fold, is_training=True,
-            savepath=savepath)
-        _save_slides_for_fold(
-            slides_list=slides[test_idxs], fold=fold, is_training=False,
-            savepath=savepath)
+        _save_slides_for_fold(slides_list=slides[train_idxs], fold=fold, is_training=True, savepath=savepath)
+        _save_slides_for_fold(slides_list=slides[test_idxs], fold=fold, is_training=False, savepath=savepath)
         fold += 1
 
 
 # noinspection PyShadowingNames
-def _get_train_test_slides_given_hospitals(
-        slides, big_hospitals, small_hospitals,
-        big_hospital_splits, small_hospital_splits):
+def _get_train_test_slides_given_hospitals(slides, big_hospitals, small_hospitals, big_hospital_splits, small_hospital_splits):
     train_big_idxs, test_big_idxs = next(big_hospital_splits)
     train_small_idxs, test_small_idxs = next(small_hospital_splits)
 
-    train_hospitals = list(big_hospitals[train_big_idxs]) + list(
-        small_hospitals[train_small_idxs])
-    test_hospitals = list(big_hospitals[test_big_idxs]) + list(
-        small_hospitals[test_small_idxs])
+    train_hospitals = list(big_hospitals[train_big_idxs]) + list(small_hospitals[train_small_idxs])
+    test_hospitals = list(big_hospitals[test_big_idxs]) + list(small_hospitals[test_small_idxs])
 
     train_slides = []
     test_slides = []
@@ -78,15 +68,12 @@ def _get_train_test_slides_given_hospitals(
 def _save_cv_splits_by_hospital(slides, n_folds, savepath, random_state=0):
     # Some hospitals have waaay more slides than others, so to have a balanced
     # split, we make each fold have one big hospital and a few small hospitals
-    slides_to_hospitals = {
-        sld: sld.split('TCGA-')[1].split('-')[0] for sld in slides}
+    slides_to_hospitals = {sld: sld.split('TCGA-')[1].split('-')[0] for sld in slides}
     hospital_counts = Counter()
     for slide, hospital in slides_to_hospitals.items():
         hospital_counts[hospital] += 1
-    big_hospitals = np.array(
-        [j[0] for j in hospital_counts.most_common(n_folds)])
-    small_hospitals = np.array([
-        j for j in hospital_counts.keys() if j not in big_hospitals])
+    big_hospitals = np.array([j[0] for j in hospital_counts.most_common(n_folds)])
+    small_hospitals = np.array([j for j in hospital_counts.keys() if j not in big_hospitals])
 
     kf = KFold(n_splits=n_folds, random_state=random_state, shuffle=True)
     big_hospital_splits = kf.split(big_hospitals)
@@ -102,38 +89,23 @@ def _save_cv_splits_by_hospital(slides, n_folds, savepath, random_state=0):
             big_hospital_splits=big_hospital_splits,
             small_hospital_splits=small_hospital_splits)
 
-        _save_slides_for_fold(
-            slides_list=train_slides, fold=fold, is_training=True,
-            savepath=savepath)
-        _save_slides_for_fold(
-            slides_list=test_slides, fold=fold, is_training=False,
-            savepath=savepath)
+        _save_slides_for_fold(slides_list=train_slides, fold=fold, is_training=True, savepath=savepath)
+        _save_slides_for_fold(slides_list=test_slides, fold=fold, is_training=False, savepath=savepath)
 
 
 # noinspection PyShadowingNames
-def save_cv_train_test_splits(
-        root: str, savepath: str, n_folds=5, by_hospital=True, random_state=0):
-    slides = np.array(list({
-        j.split('_id')[0] for j in sorted(os.listdir(opj(root, 'rgbs')))
-        if j.endswith('.png')}))
+def save_cv_train_test_splits(root: str, savepath: str, n_folds=5, by_hospital=True, random_state=0):
+    slides = np.array(list({j.split('_id')[0] for j in sorted(os.listdir(opj(root, 'rgbs'))) if j.endswith('.png')}))
     if by_hospital:
-        _save_cv_splits_by_hospital(
-            slides=slides, n_folds=n_folds, savepath=savepath,
-            random_state=random_state)
+        _save_cv_splits_by_hospital(slides=slides, n_folds=n_folds, savepath=savepath, random_state=random_state)
     else:
-        _save_cv_splits_by_slide(
-            slides=slides, n_folds=n_folds, savepath=savepath,
-            random_state=random_state)
+        _save_cv_splits_by_slide(slides=slides, n_folds=n_folds, savepath=savepath, random_state=random_state)
 
 
 # noinspection PyShadowingNames
 def get_cv_fold_slides(train_test_splits_path, fold):
-    train_slides = read_csv(
-            opj(train_test_splits_path, f'fold_{fold}_train.csv')
-        ).loc[:, 'slide_name'].to_list()
-    test_slides = read_csv(
-            opj(train_test_splits_path, f'fold_{fold}_test.csv')
-        ).loc[:, 'slide_name'].to_list()
+    train_slides = pd.read_csv(opj(train_test_splits_path, f'fold_{fold}_train.csv')).loc[:, 'slide_name'].to_list()
+    test_slides = pd.read_csv(opj(train_test_splits_path, f'fold_{fold}_test.csv')).loc[:, 'slide_name'].to_list()
     return train_slides, test_slides
 
 
@@ -227,10 +199,10 @@ class NucleusDatasetBase(object):
             sorted(os.listdir(opj(self.root, 'rgbs'))) if j.endswith('.png')
         ]
         # connect fovnames to fovids in db for efficiency
-        fovids = read_sql_query(f"""
-            SELECT fovname, fov_id, slide_name FROM fov_meta
-            WHERE slide_name LIKE "TCGA-%-DX1%"
-        """, con=dbcon)
+        fovids = pd.read_sql_query(f"""SELECT fovname, fov_id, slide_name 
+                                       FROM fov_meta
+                                       WHERE slide_name LIKE "TCGA-%-DX1%";
+                                    """, con=dbcon)
         sl = fovids.loc[:, 'slide_name']
         fovids.loc[:, 'slide_name'] = sl.apply(lambda s: s.split('_id')[0])
         fovids.index = fovids.loc[:, 'slide_name']
@@ -249,24 +221,25 @@ class NucleusDatasetBase(object):
         if self.load_once:
             # read all fov locations
             fovstr = Interrater._get_sqlitestr_for_list(self.rfovids.keys())
-            self.fovloc = read_sql_query(f"""
-                SELECT "fov_id", "xmin", "ymin", "xmax", "ymax"
-                FROM "annotation_elements"
-                WHERE "fov_id" IN ({fovstr})
-                  AND "group" LIKE "fov%"
-            ;""", con=dbcon)
+
+            # self.fovloc = pd.read_sql_query(f"""SELECT "fov_id", "xmin", "ymin", "xmax", "ymax"
+            #                                     FROM "annotation_elements"
+            #                                     WHERE "fov_id" IN ({fovstr})
+            #                                     AND "group" LIKE "fov%";
+            #                                 """, con=dbcon)
+            self.fovloc = pd.read_sql_query(f"""SELECT "fov_id", "xmin", "ymin", "xmax", "ymax"
+                                                FROM "fov_meta"
+                                                WHERE "fov_id" IN ({fovstr});
+                                            """, con=dbcon)
 
             # load all bounding boxes to avoid sqlite need during training
             if bboxes_too:
-                fovstr = Interrater._get_sqlitestr_for_list(
-                    self.rfovids.keys())
-                self.boxdf = read_sql_query(f"""
-                    SELECT "fov_id", "xmin", "ymin", "xmax", "ymax", 
-                           "group", "type"
-                    FROM "annotation_elements"
-                    WHERE "fov_id" IN ({fovstr})
-                      AND "group" NOT LIKE "fov%"
-                ;""", con=dbcon)
+                fovstr = Interrater._get_sqlitestr_for_list(self.rfovids.keys())
+                self.boxdf = pd.read_sql_query(f"""SELECT "fov_id", "xmin", "ymin", "xmax", "ymax", "group", "type"
+                                                   FROM "annotation_elements"
+                                                   WHERE "fov_id" IN ({fovstr})
+                                                   AND "group" NOT LIKE "fov%";
+                                                """, con=dbcon)
 
     def set_fovweights(self, dbcon):
         """
@@ -280,57 +253,49 @@ class NucleusDatasetBase(object):
         fovstr = Interrater._get_sqlitestr_for_list(self.rfovids.keys())
 
         # raw overall frequency of nucleus categs
-        totcounts_df = read_sql_query(f"""
-            SELECT "group", count(*) AS "no"
-            FROM "annotation_elements"
-            WHERE "fov_id" IN ({fovstr})
-              AND "group" NOT LIKE "fov%"
-            GROUP BY "group"
-        ;""", con=dbcon)
+        totcounts_df = pd.read_sql_query(f"""SELECT "group", count(*) AS "no"
+                                             FROM "annotation_elements"
+                                             WHERE "fov_id" IN ({fovstr})
+                                             AND "group" NOT LIKE "fov%"
+                                             GROUP BY "group";
+                                            """, con=dbcon)
 
         # group as needed and get total counts
-        totcounts_df.loc[:, 'group'] = totcounts_df.loc[:, 'group'].map(
-            self.labelcodes)
+        totcounts_df.loc[:, 'group'] = totcounts_df.loc[:, 'group'].map(self.labelcodes)
         self.categcounts = self._get_categcounts_from_df(totcounts_df)
-
+        
         # Assign weights. Weights are inversely proportional to the relative
         # frequency of class, with the exception of ambiguous classes which
         # are assigned zero weight
         maxval = self.categcounts.most_common(1)[0][1]
-        self.categweights = {
-            k: maxval / v for k, v in self.categcounts.items()}
+        self.categweights = {k: maxval / v for k, v in self.categcounts.items()}
         self.categweights[len(self.categs_names)] = 1e-5  # ignore ambiguous
         totwt = sum(self.categweights.values())
-        self.categweights = Counter({
-            k: v / totwt for k, v in self.categweights.items()})
+        self.categweights = Counter({k: v / totwt for k, v in self.categweights.items()})
 
         # frequency of categs for each fov
-        cntperfov_df = read_sql_query(f"""
-            SELECT "fov_id", "group", count(*) AS "no"
-            FROM "annotation_elements"
-            WHERE "fov_id" IN ({fovstr})
-              AND "group" NOT LIKE "fov%"
-            GROUP BY "fov_id", "group"
-        ;""", con=dbcon)
-        cntperfov_df.loc[:, 'group'] = cntperfov_df.loc[:, 'group'].map(
-            self.labelcodes)
+        cntperfov_df = pd.read_sql_query(f"""SELECT "fov_id", "group", count(*) AS "no"
+                                             FROM "annotation_elements"
+                                             WHERE "fov_id" IN ({fovstr})
+                                             AND "group" NOT LIKE "fov%"
+                                             GROUP BY "fov_id", "group";
+                                            """, con=dbcon)
+
+        cntperfov_df.loc[:, 'group'] = cntperfov_df.loc[:, 'group'].map(self.labelcodes)
 
         # IMPORTANT NOTE: It is critical that the weights are in the same
         #  order as self.fovnames, since the self.getitem() method uses the
         #  index relative to self.fovnames
         self.fov_weights = []
-        for fovname in self.fovnames:
-
+        for fovname in tqdm(self.fovnames, total=len(self.fovnames)):
             fovid = self.fovids[fovname]
 
             # get total counts for this fov
-            fov_categcounts = self._get_categcounts_from_df(
-                cntperfov_df.loc[cntperfov_df.loc[:, 'fov_id'] == fovid, :])
+            fov_categcounts = self._get_categcounts_from_df(cntperfov_df.loc[cntperfov_df.loc[:, 'fov_id'] == fovid, :])
+
             # fov area
-            coords = self.fovloc.loc[
-                self.fovloc.loc[:, 'fov_id'] == fovid, :].iloc[0, :]
-            area = (coords['xmax'] - coords['xmin']) * (
-                coords['ymax'] - coords['ymin'])
+            coords = self.fovloc.loc[self.fovloc.loc[:, 'fov_id'] == fovid, :].iloc[0, :]
+            area = (coords['xmax'] - coords['xmin']) * (coords['ymax'] - coords['ymin'])
             # unnormalized weight
             self.fov_weights.append(sum([
                 self.categweights[cat] * cnt / area
@@ -377,10 +342,9 @@ class NucleusDataset(NucleusDatasetBase):
 
     def _get_boxdf(self, fovname):
         if self.load_once:
-            boxdf = self.boxdf.loc[self.boxdf.loc[
-                :, 'fov_id'] == self.fovids[fovname], :].copy()
+            boxdf = self.boxdf.loc[self.boxdf.loc[:, 'fov_id'] == self.fovids[fovname], :].copy()
         else:
-            boxdf = read_sql_query(f"""
+            boxdf = pd.read_sql_query(f"""
                 SELECT "xmin", "ymin", "xmax", "ymax", "group", "type"
                 FROM "annotation_elements"
                 WHERE "fov_id" = {self.fovids[fovname]}
@@ -390,15 +354,13 @@ class NucleusDataset(NucleusDatasetBase):
 
     def _get_fovloc(self, fovname):
         if self.load_once:
-            fovloc = self.fovloc.loc[
-                self.fovloc.loc[:, 'fov_id'] == self.fovids[fovname], :].copy()
+            fovloc = self.fovloc.loc[self.fovloc.loc[:, 'fov_id'] == self.fovids[fovname], :].copy()
         else:
-            fovloc = read_sql_query(f"""
-                SELECT "fov_id", "xmin", "ymin", "xmax", "ymax"
-                FROM "annotation_elements"
-                WHERE "fov_id" = {self.fovids[fovname]}
-                  AND "group" LIKE "fov%"
-            ;""", con=self.dbcon)
+            fovloc = pd.read_sql_query(f"""SELECT "fov_id", "xmin", "ymin", "xmax", "ymax"
+                                           FROM "annotation_elements"
+                                           WHERE "fov_id" = {self.fovids[fovname]}
+                                           AND "group" LIKE "fov%";
+                                        """, con=self.dbcon)
         return fovloc.iloc[0, 1:]
 
     def getitem(self, idx, target=None, boxdf=None):
@@ -452,9 +414,7 @@ class NucleusDataset(NucleusDatasetBase):
         # this is used by the cocoEvaluator, which ignore the GROUND TRUTH
         # nuclei tagged as iscrowd .. I also modified the model itself to
         # discard predictions with the ambiguous category in evaluation mode
-        target['iscrowd'] = torch.as_tensor(
-            labels == self.labelcodes[
-                NucleusCategories.ambiguous_categs[0]], dtype=FDTYPE)
+        target['iscrowd'] = torch.as_tensor(labels == self.labelcodes[NucleusCategories.ambiguous_categs[0]], dtype=FDTYPE)
 
         # maybe crop to fov
         if self.crop_to_fov:
@@ -509,11 +469,8 @@ class NucleusDatasetMask(NucleusDataset):
         # init & assign target
         target = {
             'dense_mask': Image.fromarray(mask),
-
             # tag which nuclei are segmentations and which are bboxes
-            'ismask': torch.as_tensor(
-                boxdf.loc[:, 'type'].values == 'polyline',
-                dtype=FDTYPE),
+            'ismask': torch.as_tensor(boxdf.loc[:, 'type'].values == 'polyline', dtype=FDTYPE),
         }
 
         # mTODO (?): find total overlap of each segmented nucleus with any
@@ -533,9 +490,7 @@ class NucleusDatasetMask(NucleusDataset):
         rgb, target = self.getitem(idx, target=target, boxdf=boxdf)
 
         # split the flat mask into a set of binary masks
-        masks, _ = from_dense_to_sparse_object_mask(
-            dense_mask=np.uint8(target['dense_mask']),
-            boxes=np.int32(target['boxes']))
+        masks, _ = from_dense_to_sparse_object_mask(dense_mask=np.uint8(target['dense_mask']), boxes=np.int32(target['boxes']))
 
         # convert to tensor
         del target['dense_mask']
@@ -586,22 +541,19 @@ class NucleusDatasetMask_IMPRECISE(NucleusDataset):
         # load mask
         # loaded_mask = Image.fromarray(
         #     imread(rgb_path.replace('rgbs', 'mask'))[..., :3])
-        loaded_mask = Image.fromarray(
-            imread(rgb_path.replace('rgbs_colorNormalized', 'mask'))[..., :3])
+        loaded_mask = Image.fromarray(imread(rgb_path.replace('rgbs_colorNormalized', 'mask'))[..., :3])
         target = {'dense_mask': loaded_mask}
 
         # maybe crop to fov
         if self.crop_to_fov:
             if self.load_once:
-                fovloc = self.fovloc.loc[self.fovloc.loc[
-                    :, 'fov_id'] == self.fovids[fovname], :].copy()
+                fovloc = self.fovloc.loc[self.fovloc.loc[:, 'fov_id'] == self.fovids[fovname], :].copy()
             else:
-                fovloc = read_sql_query(f"""
-                    SELECT "xmin", "ymin", "xmax", "ymax"
-                    FROM "annotation_elements"
-                    WHERE "fov_id" = {self.fovids[fovname]}
-                      AND "group" LIKE "fov%"
-                ;""", con=self.dbcon)
+                fovloc = pd.read_sql_query(f"""SELECT "xmin", "ymin", "xmax", "ymax"
+                                               FROM "annotation_elements"
+                                               WHERE "fov_id" = {self.fovids[fovname]}
+                                               AND "group" LIKE "fov%";
+                                            """, con=self.dbcon)
             fovloc = fovloc.iloc[0, :].to_dict()
             rgb, target = self.cropper(
                 rgb=rgb, targets=target,
@@ -640,8 +592,7 @@ class NucleusDatasetMask_IMPRECISE(NucleusDataset):
 
             # FIXME: the following assumes that the nucleus pixels are the
             #  most common pixels within the bounding box
-            unique, count = np.unique(
-                loaded_mask[ymin:ymax, xmin:xmax, 0], return_counts=True)
+            unique, count = np.unique(loaded_mask[ymin:ymax, xmin:xmax, 0], return_counts=True)
             if (len(unique) > 0) and (unique[0] > 0):
                 raw = ncg.rgtcodes_dict[unique[np.argmax(count)]]['group']
             else:
@@ -684,10 +635,7 @@ class NucleusDatasetMask_IMPRECISE(NucleusDataset):
             # this is used by the cocoEvaluator, which ignore the GROUND TRUTH
             # nuclei tagged as iscrowd .. I also modified the model itself to
             # discard predictions with the ambiguous category in evaluation mode
-            'iscrowd': torch.as_tensor(
-                labels == self.labelcodes[
-                    NucleusCategories.ambiguous_categs[0]], dtype=FDTYPE
-            ),
+            'iscrowd': torch.as_tensor(labels == self.labelcodes[NucleusCategories.ambiguous_categs[0]], dtype=FDTYPE),
 
             'labels': torch.as_tensor(labels, dtype=torch.int64),
         })
@@ -737,4 +685,3 @@ def _crop_all_to_fov(
 
 
 # %% ==========================================================================
-
