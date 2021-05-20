@@ -10,7 +10,7 @@ import pickle
 from nucls_model.torchvision_detection_utils.engine import train_one_epoch, evaluate
 import nucls_model.PlottingUtils as pu
 
-
+TAG = '[ModelRunner.py]'
 ISCUDA = torch.cuda.is_available()
 if ISCUDA:
     try:
@@ -329,6 +329,7 @@ def trainNucleusModel(
 
     frozen_det = False
 
+    print(TAG, '[start_epoch, n_epochs + 1]', start_epoch, n_epochs + 1)
     for epoch in range(start_epoch, n_epochs + 1):
 
         # Maybe freeze detection, but keep training classification
