@@ -4,48 +4,50 @@ High-resolution mapping of cells and tissue structures provides a foundation for
 
 ## Setup
 
-1. Create python Environment
+1. Create python environment and cd to it's directory then activate it.
 
     ```cmd
-    python -m venv NuCLS-env
-    cd NuCLS-env
+    >> python -m venv NuCLS-env
+    >> cd NuCLS-env
+    >> Scripts\activate
     ```
 
-2. Clone this repo
+2. Clone this repo and cd to it's directory.
 
     ```cmd
-    git clone https://github.com/abdul2706/NuCLS
-    cd NuCLS
+    >> git clone https://github.com/abdul2706/NuCLS
+    >> cd NuCLS
     ```
 
-3. Install necessary packages
+3. Create following necessary folders inside NuCLS directory.
 
     ```cmd
-    pip install -r requirements.txt
+    >> mkdir "data/tcga-nucleus/v4_2020-04-05_FINAL_CORE/CORE_SET/"
+    >> mkdir "data/tcga-nucleus/v4_2020-04-05_FINAL_CORE/CORE_SET/QC/"
+    >> mkdir "results"
+    >> mkdir "results/tcga-nucleus"
+    >> mkdir "results/tcga-nucleus/models"
+    >> mkdir "results/tcga-nucleus/models/v4_2020-04-05_FINAL_CORE_QC"
     ```
 
-4. Install [HistomicsTK](https://github.com/CancerDataScience/HistomicsTK) Package in NuCLS directory
+4. Download dataset (QC.zip) from [drive](https://drive.google.com/file/d/1k350VQeegN5hMxRK9Vpc65fdLe3wsqYy/view?usp=sharing) link.
 
-5. Create necessary folders
+5. Unzip QC.zip inside following path: **data/tcga-nucleus/v4_2020-04-05_FINAL_CORE/CORE_SET/QC/** inside NuCLS directory. After unzip, make sure you have **csv, mask, rgbs, rgbs_colorNormalized and train_test_splits** directories inside QC directory.
+
+6. Install necessary packages.
 
     ```cmd
-    mkdir "results"
-    mkdir "results/tcga-nucleus"
-    mkdir "results/tcga-nucleus/models"
-    mkdir "results/tcga-nucleus/models/v4_2020-04-05_FINAL_CORE_QC"
+    >> pip install -r requirements.txt
     ```
 
-6. Create necessary folders
+7. Follow [HistomicsTK](https://github.com/CancerDataScience/HistomicsTK) instructions to install it.
+
+8. Run following command to train model.
 
     ```cmd
-    mkdir "data/tcga-nucleus/v4_2020-04-05_FINAL_CORE/CORE_SET/"
-    mkdir "data/tcga-nucleus/v4_2020-04-05_FINAL_CORE/CORE_SET/QC/"
-    mkdir "results"
-    mkdir "results/tcga-nucleus"
-    mkdir "results/tcga-nucleus/models"
-    mkdir "results/tcga-nucleus/models/v4_2020-04-05_FINAL_CORE_QC"
+    >> python train.py
     ```
 
 ## Updates
 
-2021-05-20: fixed path related issues, formatted the code, added the sqlite files, added training code and it's notebook.
+2021-05-20: fixed path related issues and other errors, formatted the code, added the sqlite files, added training code and it's notebook, updated README.md
