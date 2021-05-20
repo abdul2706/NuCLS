@@ -26,6 +26,8 @@ from nucls_model.MaskRCNN import MaskRCNN
 from configs.nucleus_style_defaults import NucleusCategories as ncg
 
 
+TAG = '[NucleusWorkflows.py]'
+
 # %%===========================================================================
 
 # noinspection DuplicatedCode
@@ -263,6 +265,8 @@ def run_one_maskrcnn_fold(
         slides=test_slides, **cfg.MaskDatasetConfigs.test_dataset)
 
     # handle class imbalance
+    print(TAG, "cfg.BaseDatasetConfigs.train_loader['shuffle']")
+    print(cfg.BaseDatasetConfigs.train_loader['shuffle'])
     if cfg.MaskRCNNConfigs.handle_class_imbalance:
         del cfg.BaseDatasetConfigs.train_loader['shuffle']
         cfg.BaseDatasetConfigs.train_loader['sampler'] = WeightedRandomSampler(

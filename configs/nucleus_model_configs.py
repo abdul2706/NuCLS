@@ -117,7 +117,7 @@ class BaseDatasetConfigs(object):
     # For fasterrcnn, Resnet18, batch=6, 4 GPUs, sweet spot is num_workers=2
     common_loader = {
         # 'num_workers': 1,  # sometimes (eg debug mode) only using 1 works
-        'num_workers': 2,
+        'num_workers': 1,
         'collate_fn': collate_fn,
     }
     train_loader = deepcopy(common_loader)
