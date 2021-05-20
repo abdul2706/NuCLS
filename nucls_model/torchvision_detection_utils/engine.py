@@ -242,8 +242,7 @@ def _update_classification_metrics(
 
 # noinspection PyPep8Naming,LongLine
 @torch.no_grad()
-def evaluate(
-        model, data_loader, device, maxDets=None, crop_inference_to_fov=False):
+def evaluate(model, data_loader, device, maxDets=None, crop_inference_to_fov=False):
     # See: https://cocodataset.org/#detection-eval
 
     # NOTE: The coco evaluator (and what's reported in FasterRCNN and
@@ -329,19 +328,14 @@ def evaluate(
         model_time = time.time() - model_time
 
         if crop_inference_to_fov:
-            images, targets, outputs = _crop_all_to_fov(
-                images=images, targets=targets, outputs=outputs,
-                cropper=cropper)
+            images, targets, outputs = _crop_all_to_fov(images=images, targets=targets, outputs=outputs, cropper=cropper)
 
         # combined detection & classification precision/recall
-        res = {
-            target["image_id"].item(): output
-            for target, output in zip(targets, outputs)}
+        res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
         evaluator_time = time.time()
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time
-        metric_logger.update(
-            model_time=model_time, evaluator_time=evaluator_time)
+        metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
 
         probabs_exist = 'probabs' in outputs[0]
 
@@ -366,8 +360,7 @@ def evaluate(
                 keep = target['iscrowd'] == 0
                 cltrg_boxes = np.int32(target['boxes'][keep])
                 cltrg_labels = np.int32(target['labels'][keep])
-                keep_target, keep_output, _, _ = \
-                    map_bboxes_using_hungarian_algorithm(
+                keep_target, keep_output, _, _ = map_bboxes_using_hungarian_algorithm(
                         bboxes1=cltrg_boxes,
                         bboxes2=np.int32(output['boxes']),
                         min_iou=0.5)
@@ -378,13 +371,9 @@ def evaluate(
                 n_matched += len(keep_output)
                 cltargets.extend(cltrg_labels[keep_target].tolist())
                 if probabs_exist:
-                    clprobabs.extend(
-                        np.float32(output['probabs'])[keep_output, :].tolist()
-                    )
+                    clprobabs.extend(np.float32(output['probabs'])[keep_output, :].tolist())
                 else:
-                    cloutlabs.extend(
-                        np.int32(output['labels'])[keep_output].tolist()
-                    )
+                    cloutlabs.extend(np.int32(output['labels'])[keep_output].tolist())
 
                 # FIXME: for now, we just assess this if classification because
                 #   otherwise I'll need to refactor the function output
@@ -392,7 +381,7 @@ def evaluate(
                 if 'masks' in target:
                     ismask = np.int32(target['ismask'])[keep_target] == 1
                     tmask = np.int32(target['masks'])[keep_target, ...][ismask, ...]
-                    if not model.transform.densify_mask:
+                    if not model.module.transform.densify_mask:
                         omask = np.int32(output['masks'] > 0.5)
                         omask = omask[:, 0, :, :]
                     else:
@@ -403,9 +392,7 @@ def evaluate(
                     omask = omask[keep_output, ...][ismask, ...]
                     for i in range(tmask.shape[0]):
                         sms = tmask[i, ...].sum() + omask[i, ...].sum()
-                        isc = np.sum(
-                            0 + ((tmask[i, ...] + omask[i, ...]) == 2)
-                        )
+                        isc = np.sum(0 + ((tmask[i, ...] + omask[i, ...]) == 2))
                         if (sms > 0) and (isc > 0):
                             seg_sums.append(sms)
                             seg_intersects.append(isc)
@@ -426,8 +413,7 @@ def evaluate(
             evaluator_time = time.time()
             coco_evaluator_objectness.update(res)
             evaluator_time = time.time() - evaluator_time
-            metric_logger_objectness.update(
-                model_time=model_time, evaluator_time=evaluator_time)
+            metric_logger_objectness.update(model_time=model_time, evaluator_time=evaluator_time)
 
     # combined detection & classification precision/recall
     # gather the stats from all processes & accumulate preds from all imgs

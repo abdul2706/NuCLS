@@ -105,26 +105,21 @@ def _save_training_losses(
     )
 
 
-def _save_testing_metrics(
-        tsl, epoch: int, checkpoint_path: str, grup: int, postfix=''):
-    tsmetrics = DataFrame(
-        columns=['epoch', 'gradient_update', 'training'] + [
-            tmetric for tmetric in tsl])
+def _save_testing_metrics(tsl, epoch: int, checkpoint_path: str, grup: int, postfix=''):
+    tsmetrics = DataFrame(columns=['epoch', 'gradient_update', 'training'] + [tmetric for tmetric in tsl])
     for tmetric, mval in tsl.items():
         tsmetrics.loc[:, tmetric] = [mval]
     tsmetrics.loc[:, 'epoch'] = epoch
     tsmetrics.loc[:, 'gradient_update'] = grup
     tsmetrics.loc[:, 'training'] = False
     tsmetrics.to_csv(
-        checkpoint_path.replace(
-            '.ckpt', f'_testingMetricsByEpoch{postfix}.csv'),
+        checkpoint_path.replace('.ckpt', f'_testingMetricsByEpoch{postfix}.csv'),
         header=epoch == 1, mode='w' if epoch == 1 else 'a',
         index=False,
     )
 
 
-def _evaluate_on_testing_set(
-        model, data_loader_test, device, test_maxDets, crop_inference_to_fov):
+def _evaluate_on_testing_set(model, data_loader_test, device, test_maxDets, crop_inference_to_fov):
     evl_all, evl_objectness, classification_metrics = evaluate(
         model=model, data_loader=data_loader_test,
         device=device, maxDets=test_maxDets,
