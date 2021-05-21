@@ -292,7 +292,7 @@ class FasterRCNNConfigs(object):
 
     # params for training the model
     training_params = {
-        'n_gradient_updates': 16000,  # maskrcnn paper: 160k grad. updates
+        'n_gradient_updates': 10000,  # maskrcnn paper: 160k grad. updates
         'freeze_det_after': 15000,
         'effective_batch_size': 4,
 
@@ -300,7 +300,7 @@ class FasterRCNNConfigs(object):
         'print_freq': 12,  # meaningful if >= effective_batch_size / batch_size
         'window_size': None,
         'smoothing_window': 25,
-        'test_evaluate_freq': 20,
+        'test_evaluate_freq': 5,
         'test_maxDets': [1, 100] + [box_parameters['box_detections_per_img']],
 
         'n_testtime_augmentations': [0],

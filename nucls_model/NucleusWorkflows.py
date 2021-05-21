@@ -87,8 +87,7 @@ def run_one_fasterrcnn_fold(
         cfg.BaseDatasetConfigs.train_loader['sampler'] = WeightedRandomSampler(
             weights=train_dataset.fov_weights,
             num_samples=len(train_dataset.fov_weights),
-            replacement=cfg.FasterRCNNConfigs.sample_with_replacement,
-        )
+            replacement=cfg.FasterRCNNConfigs.sample_with_replacement)
 
     # %% --------------------------------------------------------------
     # Train model
@@ -96,10 +95,8 @@ def run_one_fasterrcnn_fold(
     if train:
         trainNucleusModel(
             model=model, checkpoint_path=checkpoint_path,
-            data_loader=DataLoader(
-                dataset=train_dataset, **cfg.BaseDatasetConfigs.train_loader),
-            data_loader_test=DataLoader(
-                dataset=test_dataset, **cfg.BaseDatasetConfigs.test_loader),
+            data_loader=DataLoader(dataset=train_dataset, **cfg.BaseDatasetConfigs.train_loader),
+            data_loader_test=DataLoader(dataset=test_dataset, **cfg.BaseDatasetConfigs.test_loader),
             **cfg.FasterRCNNConfigs.training_params)
 
     elif os.path.exists(checkpoint_path):

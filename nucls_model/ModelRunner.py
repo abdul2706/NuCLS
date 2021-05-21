@@ -329,6 +329,10 @@ def trainNucleusModel(
 
     frozen_det = False
 
+    print(TAG, '[len(data_loader.dataset)]', len(data_loader.dataset))
+    print(TAG, '[effective_batch_size]', effective_batch_size)
+    print(TAG, '[grups_per_epoch]', grups_per_epoch)
+    print(TAG, '[n_gradient_updates]', n_gradient_updates)
     print(TAG, '[start_epoch, n_epochs + 1]', start_epoch, n_epochs + 1)
     for epoch in range(start_epoch, n_epochs + 1):
 
@@ -352,8 +356,7 @@ def trainNucleusModel(
 
         # evaluate on the test dataset
         tsls = []
-        if (data_loader_test is not None) and ((epoch == n_epochs) or (
-                (epoch - 1) % test_evaluate_freq == 0)):
+        if (data_loader_test is not None) and ((epoch == n_epochs) or ((epoch - 1) % test_evaluate_freq == 0)):
 
             # get performance at all requested testtime augmentation levels
             for ntta in n_testtime_augmentations:
@@ -424,4 +427,3 @@ def evaluateNucleusModel(
         tsls.append(tsl)
 
     return tsls
-
