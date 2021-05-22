@@ -224,19 +224,14 @@ def run_one_maskrcnn_fold(
     print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
     model = MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)
     print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
-    # print(TAG, '[model]')
-    # print(model)
-    # torch.save(model, 'proposed-model-01.pth')
-    # return
 
     # %% --------------------------------------------------------------
     # Test that it works in forward mode
 
-    model.eval()
-    x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
-    predictions = model(x)
-    print(predictions)
-    return
+    # model.eval()
+    # x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+    # predictions = model(x)
+    # print(predictions)
 
     # %% --------------------------------------------------------------
     # Prep data loaders
