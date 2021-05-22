@@ -124,7 +124,7 @@ class BaseDatasetConfigs(object):
     train_loader = deepcopy(common_loader)
     train_loader.update({
         # This is the SUB-BATCH size; "effective" batch size is a multiple
-        'batch_size': 2,  # FIXME: config
+        'batch_size': 1,  # FIXME: config
         'shuffle': True,
     })
     test_loader = deepcopy(common_loader)
@@ -296,7 +296,7 @@ class FasterRCNNConfigs(object):
     training_params = {
         'n_gradient_updates': 10000,  # maskrcnn paper: 160k grad. updates
         'freeze_det_after': 15000,
-        'effective_batch_size': 4,
+        'effective_batch_size': 1,
 
         # monitoring params
         'print_freq': 12,  # meaningful if >= effective_batch_size / batch_size
