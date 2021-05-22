@@ -15,6 +15,7 @@ from nucls_model.torchvision_detection_utils.utils import collate_fn  # noqa
 from nucls_model.FeatureExtractor import FeatureExtractor  # noqa
 from nucls_model.FasterRCNN import ClassificationConvolutions, SelfAttentionEncoder  # noqa
 from nucls_model.MaskRCNN import MaskRCNNHeads  # noqa
+from nucls_model.LymphocyteNet3_CM3 import LymphocyteNet3_CM3
 
 
 class CoreSetQC(object):
@@ -221,7 +222,8 @@ class FasterRCNNConfigs(object):
     fastercnn_params = {
         # load a pre-trained model for classification and return
         # only the features. This is the network trunk
-        'backbone': FeatureExtractor(**feature_extractor_params),
+        # 'backbone': FeatureExtractor(**feature_extractor_params),
+        'backbone': LymphocyteNet3_CM3(debug=True),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 

@@ -24,16 +24,14 @@ from nucls_model.MiscUtils import map_bboxes_using_hungarian_algorithm
 from nucls_model.DataFormattingUtils import parse_sparse_mask_for_use
 from nucls_model.MaskRCNN import MaskRCNN
 from configs.nucleus_style_defaults import NucleusCategories as ncg
-
+from pprint import pprint
 
 TAG = '[NucleusWorkflows.py]'
 
 # %%===========================================================================
 
 # noinspection DuplicatedCode
-def run_one_fasterrcnn_fold(
-        fold: int, cfg, model_root: str, model_name: str, train=True,
-        vis_test=True):
+def run_one_fasterrcnn_fold(fold: int, cfg, model_root: str, model_name: str, train=True, vis_test=True):
 
     # FIXME: for prototyping
     if fold == 999:
@@ -62,16 +60,12 @@ def run_one_fasterrcnn_fold(
     # %% --------------------------------------------------------------
     # Prep data loaders
 
-    train_slides, test_slides = get_cv_fold_slides(
-        train_test_splits_path=CoreSetQC.train_test_splits_path, fold=fold)
+    train_slides, test_slides = get_cv_fold_slides(train_test_splits_path=CoreSetQC.train_test_splits_path, fold=fold)
 
     # copy train/test slides with model itself just to be safe
     for tr in ('train', 'test'):
         fname = f'fold_{fold}_{tr}.csv'
-        copyfile(
-            opj(CoreSetQC.train_test_splits_path, fname),
-            opj(model_folder, fname),
-        )
+        copyfile(opj(CoreSetQC.train_test_splits_path, fname), opj(model_folder, fname))
 
     train_dataset = NucleusDataset(
         root=CoreSetQC.dataset_root, dbpath=CoreSetQC.dbpath,
@@ -224,14 +218,25 @@ def run_one_maskrcnn_fold(
     # %% --------------------------------------------------------------
     # Init model
 
+    print(TAG, '[cfg.MaskRCNNConfigs.maskrcnn_params]')
+    pprint(cfg.MaskRCNNConfigs.maskrcnn_params)
+
+    print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
     model = MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)
+    print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
+    # print(TAG, '[model]')
+    # print(model)
+    # torch.save(model, 'proposed-model-01.pth')
+    # return
 
     # %% --------------------------------------------------------------
     # Test that it works in forward mode
 
-    # model.eval()
-    # x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
-    # predictions = model(x)
+    model.eval()
+    x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+    predictions = model(x)
+    print(predictions)
+    return
 
     # %% --------------------------------------------------------------
     # Prep data loaders

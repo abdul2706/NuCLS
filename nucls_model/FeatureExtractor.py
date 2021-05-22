@@ -69,8 +69,7 @@ class FeatureExtractor(Module):
         if case is None:
             raise NNTypeError(
                 "{} is no neural network architecture implemented in this " +
-                "class.\n The implemented architectures are: {}.".format(
-                    str(model_switcher.keys())[11:-2]))
+                "class.\n The implemented architectures are: {}.".format(str(model_switcher.keys())[11:-2]))
         cal, fun, in_dim = case
         return cal(fun, pretrained), in_dim
 

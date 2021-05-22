@@ -43,5 +43,4 @@ class BackboneSwitcher:
         :param pretrained: see feature_nets
         :return: see feature_nets
         """
-        return resnet_fpn_backbone(
-            backbone_name, pretrained, trainable_layers=trainable_layers)
+        return resnet_fpn_backbone(backbone_name, pretrained, trainable_layers=trainable_layers)

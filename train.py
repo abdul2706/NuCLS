@@ -11,7 +11,7 @@ def train():
     parser.add_argument('--qcd', type=int, default=1, help='use QCd data for training?')
     parser.add_argument('--train', type=int, default=1, help='train?')
     parser.add_argument('--vistest', type=int, default=1, help='visualize results on testing?')
-    args = parser.parse_args(['-f', '1', '-g', '0'])
+    args = parser.parse_args(['-f', '999', '-g', '0'])
     args.qcd = bool(args.qcd)
     args.train = bool(args.train)
     args.vistest = bool(args.vistest)

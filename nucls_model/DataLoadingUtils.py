@@ -152,8 +152,7 @@ class NucleusDatasetBase(object):
         # Note: the crop is IMPORTANT to ensure the size of images
         # fed to the network during training is constant. It's not just for
         # augmentation!
-        self.cropper = tvdt.Cropper(
-            size=self.crop_size, plusminus=self.crop_plusminus)
+        self.cropper = tvdt.Cropper(size=self.crop_size, plusminus=self.crop_plusminus)
 
         # set names of fovs, slides, load boxes, etc
         self.set_fovnames_and_ids(dbcon=dbcon, slides=slides)
