@@ -14,13 +14,11 @@ from torchvision.models.utils import load_state_dict_from_url
 # from torchvision.models.detection.generalized_rcnn import GeneralizedRCNN
 # from torchvision.models.detection.roi_heads import RoIHeads
 # from torchvision.models.detection.transform import GeneralizedRCNNTransform
-from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, \
-    RegionProposalNetwork
+from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
 
 from nucls_model.GeneralizedRCNN import GeneralizedRCNN
-from nucls_model.torchvision_detection_utils.Transform import \
-    GeneralizedRCNNTransform
+from nucls_model.torchvision_detection_utils.Transform import GeneralizedRCNNTransform
 from nucls_model.ROIHeads import RoIHeads
 
 __all__ = [

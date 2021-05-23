@@ -102,23 +102,35 @@ class Bottleneck2(nn.Module):
         return out
 
 class LymphocyteNet3_CM3(Module):
-    def __init__(self, debug, **kwargs):
+
+    architectures = {
+        18: [Bottleneck2, [64, 128, 256, 512]],
+        34: [Bottleneck2, [64, 128, 256, 512]],
+        50: [Bottleneck2, [256, 512, 1024, 2048]],
+        101: [Bottleneck2, [256, 512, 1024, 2048]],
+        152: [Bottleneck2, [256, 512, 1024, 2048]]
+    }
+    
+    def __init__(self, depth, debug, **kwargs):
         super(LymphocyteNet3_CM3, self).__init__()
         
         self.debug = debug
         self.module_name = 'LymphocyteNet3_CM3'
         
-        self.backbone1 = ResNet(depth=50, debug=False)
-        self.backbone2 = ResNetCBAM(depth=50, debug=False)
+        self.backbone1 = ResNet(depth=depth, debug=False)
+        self.backbone2 = ResNetCBAM(depth=depth, debug=False)
 
-        self.block1 = self._make_layer(Bottleneck2, 256, 256, 2, stride=1) # 1 block inplace of 2
-        self.block2 = self._make_layer(Bottleneck2, 512, 512, 2, stride=1)
-        self.block3 = self._make_layer(Bottleneck2, 1024, 1024, 2, stride=1)
-        self.block4 = self._make_layer(Bottleneck2, 2048, 2048, 2, stride=1, use_dropout=True)
+        block, planes = self.architectures[depth]
 
-        self.blocks = [self.block1, self.block2, self.block3, self.block4]
+        # self.block1 = self._make_layer(block, planes[0], planes[0], 2, stride=1) # 1 block inplace of 2
+        # self.block2 = self._make_layer(block, planes[1], planes[1], 2, stride=1)
+        # self.block3 = self._make_layer(block, planes[2], planes[2], 2, stride=1)
+        self.block4 = self._make_layer(block, planes[3], planes[3], 2, stride=1, use_dropout=True)
 
-        self.out_channels = 2048
+        # self.blocks = [self.block1, self.block2, self.block3, self.block4]
+        self.blocks = [self.block4]
+
+        self.out_channels = planes[-1]
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
@@ -142,33 +154,37 @@ class LymphocyteNet3_CM3(Module):
         x2 = self.backbone2(x)
         # x3 = self.backbone3(x)
 
-        if self.debug:
-            print(f'[{self.module_name}]', 'output of backbone1 | ', end='')
-            for level_out in x1:
-                print(tuple(level_out.shape), end=' | ')
-            print(f'\n[{self.module_name}]', 'output of backbone2 | ', end='')
-            for level_out in x2:
-                print(tuple(level_out.shape), end=' | ')
-            print()
+        # if self.debug:
+        #     print(f'[{self.module_name}]', 'output of backbone1 | ', end='')
+        #     for level_out in x1:
+        #         print(tuple(level_out.shape), end=' | ')
+        #     print(f'\n[{self.module_name}]', 'output of backbone2 | ', end='')
+        #     for level_out in x2:
+        #         print(tuple(level_out.shape), end=' | ')
+        #     print()
 
-        features_merged = []
-        # feature concatenation
-        for i in range(4):
-            if self.debug: print(f'[{self.module_name}]', i)
-            features_add = x1[i] + x2[i]
-            if self.debug: print(f'[{self.module_name}]', 'features_add.shape =', features_add.shape)
-            features_merged.append(features_add)
+        # features_merged = []
+        # # feature concatenation
+        # for i in range(1):
+        #     if self.debug: print(f'[{self.module_name}]', i)
+        #     features_add = x1[i] + x2[i]
+        #     if self.debug: print(f'[{self.module_name}]', 'features_add.shape =', features_add.shape)
+        #     features_merged.append(features_add)
 
-        outs = []
-        # feature reduction
-        for i in range(4):
-            ith_features = features_merged[i]
-            if self.debug: print(f'[{self.module_name}]', i, ith_features.shape)
-            ith_block = self.blocks[i]
-            features_reduced = ith_block(ith_features)
-            if self.debug: print(f'[{self.module_name}]', 'features_reduced.shape =', features_reduced.shape)
-            outs.append(features_reduced)
+        # outs = []
+        # # feature reduction
+        # for i in range(1):
+        #     ith_features = features_merged[i]
+        #     if self.debug: print(f'[{self.module_name}]', i, ith_features.shape)
+        #     ith_block = self.blocks[i]
+        #     features_reduced = ith_block(ith_features)
+        #     if self.debug: print(f'[{self.module_name}]', 'features_reduced.shape =', features_reduced.shape)
+        #     outs.append(features_reduced)
 
+        outs = x1[3] + x2[3]
+        outs = self.block4(outs)
+        print(self.module_name, '[type(outs)][outs.shape]')
+        print(type(outs[0]), outs.shape)
         return outs
 
     # def init_weights(self, pretrained=None):

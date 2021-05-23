@@ -123,11 +123,8 @@ class GeneralizedRCNN(nn.Module):
             #  detection and classification.
             # get augmented boxes & get class probabs without postprocessing
             for _ in range(self.n_testtime_augmentations):
-                prealization = self.proposal_augmenter(
-                    proposals=proposals, image_shapes=images.image_sizes)
-                _cprobabs_realization = self.roi_heads(
-                    features=features, proposals=prealization,
-                    image_shapes=images.image_sizes, _just_return_probabs=True)
+                prealization = self.proposal_augmenter(proposals=proposals, image_shapes=images.image_sizes)
+                _cprobabs_realization = self.roi_heads(features=features, proposals=prealization, image_shapes=images.image_sizes, _just_return_probabs=True)
                 if _cprobabs is None:
                     _cprobabs = _cprobabs_realization
                 else:

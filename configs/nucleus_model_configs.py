@@ -223,7 +223,7 @@ class FasterRCNNConfigs(object):
         # load a pre-trained model for classification and return
         # only the features. This is the network trunk
         # 'backbone': FeatureExtractor(**feature_extractor_params),
-        'backbone': LymphocyteNet3_CM3(debug=True),
+        'backbone': LymphocyteNet3_CM3(depth=18, debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -259,7 +259,7 @@ class FasterRCNNConfigs(object):
         # 'cconvhead': None,  # default: None
         'cconvhead': ClassificationConvolutions(
             in_channels=fastercnn_params['backbone'].out_channels,
-            layers=4 * [fastercnn_params['backbone'].out_channels],
+            layers=4*[fastercnn_params['backbone'].out_channels],
         ),
 
         # Self-attention head to improve classification by being attentive

@@ -16,8 +16,7 @@ from torch.jit.annotations import Optional, List, Dict, Tuple
 import numpy as np
 
 from TorchUtils import tensor_isin
-from nucls_model.torchvision_detection_utils.transforms import \
-    remove_degenerate_bboxes
+from nucls_model.torchvision_detection_utils.transforms import remove_degenerate_bboxes
 
 
 @torch.jit._script_if_tracing

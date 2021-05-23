@@ -8,8 +8,7 @@ from torchvision.transforms import functional as F
 from copy import deepcopy
 import numpy as np
 from PIL import Image
-from histomicstk.preprocessing.augmentation import \
-    rgb_perturb_stain_concentration
+from histomicstk.preprocessing.augmentation import rgb_perturb_stain_concentration
 from torchvision.ops import boxes as box_ops
 from collections.abc import Sequence
 

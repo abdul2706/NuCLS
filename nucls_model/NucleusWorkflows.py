@@ -228,10 +228,13 @@ def run_one_maskrcnn_fold(
     # %% --------------------------------------------------------------
     # Test that it works in forward mode
 
-    # model.eval()
+    model.eval()
     # x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
-    # predictions = model(x)
-    # print(predictions)
+    x = [torch.rand(3, 300, 300)]
+    predictions = model(x)
+    print(TAG, '[predictions]\n')
+    print(predictions)
+    return
 
     # %% --------------------------------------------------------------
     # Prep data loaders

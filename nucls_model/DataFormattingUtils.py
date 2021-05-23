@@ -6,8 +6,7 @@ import torchvision
 import numpy as np
 from pandas import DataFrame
 from itertools import combinations
-from histomicstk.annotations_and_masks.masks_to_annotations_handler import \
-    get_contours_from_mask
+from histomicstk.annotations_and_masks.masks_to_annotations_handler import get_contours_from_mask
 from configs.nucleus_style_defaults import DefaultAnnotationStyles
 
 

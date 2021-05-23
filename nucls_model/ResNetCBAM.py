@@ -60,13 +60,16 @@ class SpatialAttention(nn.Module):
 class BasicBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, debug=False):
+    # def __init__(self, inplanes, planes, stride=1, downsample=None, debug=False):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, use_dropout=False, debug=False):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
         self.conv2 = conv3x3(planes, planes)
         self.bn2 = nn.BatchNorm2d(planes)
+
+        self.dropout = nn.Dropout(p=0.25) if use_dropout else None
 
         self.ca = ChannelAttention(planes)
         self.sa = SpatialAttention()
@@ -78,10 +81,12 @@ class BasicBlock(nn.Module):
         residual = x
 
         out = self.conv1(x)
+        out = self.dropout(out) if self.dropout is not None else out
         out = self.bn1(out)
         out = self.relu(out)
 
         out = self.conv2(out)
+        out = self.dropout(out) if self.dropout is not None else out
         out = self.bn2(out)
 
         out = self.ca(out) * out
@@ -190,9 +195,9 @@ class ResNetCBAM(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
+        self.layer1 = self._make_layer(block, 64, layers[0], use_dropout=True)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, use_dropout=True)
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, use_dropout=True)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2, use_dropout=True)
 
         for m in self.modules():
