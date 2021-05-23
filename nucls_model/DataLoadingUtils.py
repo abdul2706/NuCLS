@@ -193,10 +193,7 @@ class NucleusDatasetBase(object):
 
     def set_fovnames_and_ids(self, dbcon, slides: list):
         # get fovlist and connect to db
-        self.fovnames = [
-            j.split('.png')[0] for j in
-            sorted(os.listdir(opj(self.root, 'rgbs'))) if j.endswith('.png')
-        ]
+        self.fovnames = [j.split('.png')[0] for j in sorted(os.listdir(opj(self.root, 'rgbs'))) if j.endswith('.png')]
         # connect fovnames to fovids in db for efficiency
         fovids = pd.read_sql_query(f"""SELECT fovname, fov_id, slide_name 
                                        FROM fov_meta

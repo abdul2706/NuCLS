@@ -146,8 +146,7 @@ def reduce_dict(input_dict, average=True):
 
 class MetricLogger(object):
     def __init__(self, delimiter="\t", window_size=20):
-        self.meters = defaultdict(
-            lambda: SmoothedValue(window_size=window_size))
+        self.meters = defaultdict(lambda: SmoothedValue(window_size=window_size))
         self.delimiter = delimiter
 
     def update(self, **kwargs):

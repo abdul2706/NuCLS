@@ -21,9 +21,7 @@ def _check_for_degenerate_boxes(trgts):
                 # print the first degenrate box
                 bb_idx = degenerate_boxes.any(dim=1).nonzero().view(-1)[0]
                 degen_bb: List[float] = boxes[bb_idx].tolist()
-                raise ValueError("All bounding boxes should have positive height and width."
-                                 " Found invaid box {} for target at index {}."
-                                 .format(degen_bb, target_idx))
+                raise ValueError("All bounding boxes should have positive height and width. Found invaid box {} for target at index {}.".format(degen_bb, target_idx))
 
 
 # noinspection LongLine
@@ -90,12 +88,9 @@ class GeneralizedRCNN(nn.Module):
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError("Expected target boxes to be a tensor"
-                                         "of shape [N, 4], got {:}.".format(
-                                             boxes.shape))
+                        raise ValueError("Expected target boxes to be a tensor of shape [N, 4], got {:}.".format(boxes.shape))
                 else:
-                    raise ValueError("Expected target boxes to be of type "
-                                     "Tensor, got {:}.".format(type(boxes)))
+                    raise ValueError("Expected target boxes to be of type Tensor, got {:}.".format(type(boxes)))
 
         original_image_sizes = torch.jit.annotate(List[Tuple[int, int]], [])
         for img in images:

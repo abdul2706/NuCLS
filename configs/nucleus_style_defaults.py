@@ -61,10 +61,8 @@ class DefaultAnnotationStyles(object):
     MAIN_CLASSES = ['tumor', 'fibroblast', 'lymphocyte']
     CLASSES = list(STANDARD_STYLES.keys())
     COLORS = {
-        c: [
-            int(v) / 255 for v in
-            s['lineColor'].split('rgb(')[1].split(')')[0].split(',')
-        ] for c, s in STANDARD_STYLES.items()
+        c: [int(v) / 255 for v in s['lineColor'].split('rgb(')[1].split(')')[0].split(',')]
+        for c, s in STANDARD_STYLES.items()
     }
     COLORS['all'] = COLORS['unlabeled']
     COLORS['detection'] = COLORS['unlabeled']
@@ -85,8 +83,7 @@ class DefaultAnnotationStyles(object):
         STANDARD_STYLES[stylename]["lineWidth"] = DEFAULT_LINEWIDTH
         fillColor = style['lineColor']
         fillColor = fillColor.replace("rgb", "rgba")
-        fillColor = fillColor[:fillColor.rfind(")")] + ",{})".format(
-            DEFAULT_OPACITY)
+        fillColor = fillColor[:fillColor.rfind(")")] + ",{})".format(DEFAULT_OPACITY)
 
         # type-specific defaults
         if STANDARD_STYLES[stylename]["type"] == "rectangle":
@@ -99,8 +96,7 @@ class DefaultAnnotationStyles(object):
 
         elif STANDARD_STYLES[stylename]["type"] == "polyline":
             STANDARD_STYLES[stylename]['closed'] = True
-            STANDARD_STYLES[stylename]['points'] = [
-                [0, 0, 0], [0, 1, 0], [1, 0, 0]]
+            STANDARD_STYLES[stylename]['points'] = [[0, 0, 0], [0, 1, 0], [1, 0, 0]]
             STANDARD_STYLES[stylename]["fillColor"] = fillColor
 
     # GT codes dict for parsing into label mask
@@ -129,13 +125,8 @@ class NucleusCategories(object):
 
     # categories that should only be used to TRAIN detector and which have
     # no classification because of their ambiguity and high discordance
-    ambiguous_categs = [
-        'apoptotic_body',
-        'unlabeled',
-    ]
-    ambiguous_categs.extend(
-        [f'correction_{v}' for v in ambiguous_categs]
-    )
+    ambiguous_categs = ['apoptotic_body', 'unlabeled']
+    ambiguous_categs.extend([f'correction_{v}' for v in ambiguous_categs])
 
     # map from raw categories to main categories to be learned
     raw_to_main_categmap = OrderedDict({
@@ -185,8 +176,7 @@ class NucleusCategories(object):
     # direct dict mapping from main categs to super category gt codes
     main_codes_to_super_codes = {}
     for k, v in main_categs_codes.items():
-        main_codes_to_super_codes[v] = super_categs_codes[
-            main_to_super_categmap[k]]
+        main_codes_to_super_codes[v] = super_categs_codes[main_to_super_categmap[k]]
 
     # direct dict mapping from raw categs to main category gt codes
     raw_to_main_categs_codes = {}
@@ -201,8 +191,7 @@ class NucleusCategories(object):
     # map from raw categories to PURE detection categories
     raw_to_puredet_categmap = OrderedDict()
     for k in raw_to_main_categmap.keys():
-        raw_to_puredet_categmap[k] = \
-            'nucleus' if k not in ambiguous_categs else 'AMBIGUOUS'
+        raw_to_puredet_categmap[k] = 'nucleus' if k not in ambiguous_categs else 'AMBIGUOUS'
 
     # names & *contiguous* gt codes for PURE detection
     puredet_categs = ordered_vals_from_ordered_dict(raw_to_puredet_categmap)
@@ -289,12 +278,10 @@ class NameStandardization(object):
     # map to unified vocbulary -> to train models
     # these are the substrings that map to standardizes styles
     # everythin is also a substring of itself
-    CLASSNAME_VOCAB = {
-        k: [k] for k in DefaultAnnotationStyles.STANDARD_STYLES.keys()}
+    CLASSNAME_VOCAB = {k: [k] for k in DefaultAnnotationStyles.STANDARD_STYLES.keys()}
     EXTRA_SUBSTRINGS = {
         'fov_preapproved': ['correction_fov'],
-        'fov_for_programmatic_edit': [
-            'fov_for_programmatic_correction', 'fov_needs_correction'],
+        'fov_for_programmatic_edit': ['fov_for_programmatic_correction', 'fov_needs_correction'],
         'tumor': ['tumour'],
         'fibroblast': ['fibrobl', 'fiborbl', 'fiobroblast', 'stroma'],
         'lymphocyte': ['lymphocyt'],
@@ -307,9 +294,7 @@ class NameStandardization(object):
         'neutrophil': ['neutroph'],
         'ductal_epithelium': ['ductal_epith', 'ductal epith'],
         'eosinophil': ['eosinoph', 'esinoph'],
-        'unlabeled': [
-            'unlabel', 'mohamed_nucleus', 'debri', 'rbc', 'unknown'
-        ],
+        'unlabeled': ['unlabel', 'mohamed_nucleus', 'debri', 'rbc', 'unknown'],
     }
     for k in CLASSNAME_VOCAB.keys():
         if k in EXTRA_SUBSTRINGS.keys():
@@ -507,8 +492,7 @@ class Interrater(object):
 
     # To facilitate sqlite querying
     @staticmethod
-    def _get_sqlitestr_for_list(
-            what: list, prefix: str = '', postfix: str = '') -> str:
+    def _get_sqlitestr_for_list(what: list, prefix: str = '', postfix: str = '') -> str:
         if isinstance(what, type({}.keys())):
             what = list(what)
         if what[0] == '*':
@@ -537,30 +521,24 @@ class Interrater(object):
     @staticmethod
     def _get_truthcol(whoistruth: str, unbiased: bool) -> str:
         ir = Interrater
-        return f'{ir._ubstr(unbiased)}{ir.TRUTHMETHOD}_inferred_label_' \
-               f'{whoistruth}'
+        return f'{ir._ubstr(unbiased)}{ir.TRUTHMETHOD}_inferred_label_{whoistruth}'
 
     @staticmethod
-    def _query_real_anchors_for_usr(
-            dbcon, whoistruth: str, unbiased: bool, usr: str,
-            evalset: str, colnames: Union[list, None] = None) -> DataFrame:
+    def _query_real_anchors_for_usr(dbcon, whoistruth: str, unbiased: bool, usr: str, evalset: str, colnames: Union[list, None] = None) -> DataFrame:
         ir = Interrater
         ubstr = ir._ubstr(unbiased)
-        tablename = f'v3.1_final_anchors_' \
-                    f'{evalset}_{ubstr}{whoistruth}_AreTruth'
+        tablename = f'v3.1_final_anchors_{evalset}_{ubstr}{whoistruth}_AreTruth'
         truthcol = ir._get_truthcol(whoistruth=whoistruth, unbiased=unbiased)
         if colnames is None:
             colnames = ['anchor_id', f'{usr}', f'{truthcol}']
         return read_sql_query(f"""
             SELECT {ir._get_sqlitestr_for_list(colnames)}
             FROM "{tablename}"
-            WHERE "{usr}" != "DidNotAnnotateFOV"
-        ;""", dbcon)
+            WHERE "{usr}" != "DidNotAnnotateFOV";
+            """, dbcon)
 
     @staticmethod
-    def _query_fp_anchors_for_usr(
-            dbcon, whoistruth: str, unbiased: bool, usr: str,
-            evalset: str, colnames: Union[list, None] = None) -> DataFrame:
+    def _query_fp_anchors_for_usr(dbcon, whoistruth: str, unbiased: bool, usr: str, evalset: str, colnames: Union[list, None] = None) -> DataFrame:
         ir = Interrater
         ubstr = ir._ubstr(unbiased)
         truthcol = ir._get_truthcol(whoistruth=whoistruth, unbiased=unbiased)
@@ -575,32 +553,28 @@ class Interrater(object):
             SELECT {ir._get_sqlitestr_for_list(colnames)}
             FROM "all_anchors_{evalset}"
             WHERE (
-                  "{ubstr}n_matches_{whoistruth}" < {minn}
-              AND {common}
+                "{ubstr}n_matches_{whoistruth}" < {minn}
+                AND {common}
             )
             OR (
-                  "{ubstr}n_matches_{whoistruth}" >= {minn}
-              AND "{truthcol}" = "undetected"
-              AND {common}
-            )
-        ;""", dbcon)
+                "{ubstr}n_matches_{whoistruth}" >= {minn}
+                AND "{truthcol}" = "undetected"
+                AND {common}
+            );
+            """, dbcon)
 
     @staticmethod
-    def _query_all_anchors_for_usr(
-            dbcon, usr: str, evalset: str,
-            get_clicks: bool = False) -> DataFrame:
+    def _query_all_anchors_for_usr(dbcon, usr: str, evalset: str, get_clicks: bool = False) -> DataFrame:
         clicks = ', algorithmic_clicks_All' if get_clicks else ''
         return read_sql_query(f"""
             SELECT "anchor_id", "{usr}" {clicks}
             FROM "all_anchors_{evalset}"
             WHERE "{usr}" != "DidNotAnnotateFOV"
-              AND "min_iou" = {Interrater.CMINIOU}
-        ;""", dbcon)
+            AND "min_iou" = {Interrater.CMINIOU};
+            """, dbcon)
 
     @staticmethod
-    def _query_all_anchors_for_who(
-            dbcon, who: str, evalset: str,
-            get_truth: bool = False) -> DataFrame:
+    def _query_all_anchors_for_who(dbcon, who: str, evalset: str, get_truth: bool = False) -> DataFrame:
         ir = Interrater
         usrstr = ir._get_sqlite_usrstr_for_who(who)
         if get_truth:
@@ -612,28 +586,23 @@ class Interrater(object):
         ;""", dbcon)
 
     @staticmethod
-    def _get_true_and_inferred_labels_for_who(
-            dbcon, whoistruth: str, unbiased: bool, who: str,
-            evalset: str, colnames: Union[list, None] = None) -> DataFrame:
+    def _get_true_and_inferred_labels_for_who(dbcon, whoistruth: str, unbiased: bool, who: str, evalset: str, colnames: Union[list, None] = None) -> DataFrame:
         ir = Interrater
         ubstr = ir._ubstr(unbiased)
-        tablename = f'v3.1_final_anchors_' \
-                    f'{evalset}_{ubstr}{whoistruth}_AreTruth'
-        truthcol = ir._get_truthcol(
-            whoistruth=whoistruth, unbiased=unbiased)
+        tablename = f'v3.1_final_anchors_{evalset}_{ubstr}{whoistruth}_AreTruth'
+        truthcol = ir._get_truthcol(whoistruth=whoistruth, unbiased=unbiased)
         if colnames is None:
             colnames = [
                 'anchor_id', f'{truthcol}',
                 f'EM_inferred_label_{who}',
                 f'EM_inferred_label_confidence_{who}',
             ]
-            colnames += [
-                f'EM_prob_{cls}_{who}' for cls in ['undetected'] + ir.CLASSES]
+            colnames += [f'EM_prob_{cls}_{who}' for cls in ['undetected'] + ir.CLASSES]
         return read_sql_query(f"""
             SELECT {ir._get_sqlitestr_for_list(colnames)}
             FROM "{tablename}"
-            WHERE "n_matches_{who}" >= 2 
-              AND "EM_inferred_label_{who}" NOT NULL
-        ;""", dbcon)
+            WHERE "n_matches_{who}" >= 2
+            AND "EM_inferred_label_{who}" NOT NULL;
+            """, dbcon)
 
 # %%===========================================================================

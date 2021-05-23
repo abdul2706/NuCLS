@@ -61,9 +61,7 @@ def isGPUDevice():
     return os.system("nvidia-smi") == 0
 
 
-def AllocateGPU(
-        N_GPUs=1, GPUs_to_use=None, TOTAL_GPUS=4,
-        verbose=True, N_trials=0):
+def AllocateGPU(N_GPUs=1, GPUs_to_use=None, TOTAL_GPUS=4, verbose=True, N_trials=0):
     """Restrict GPU use to a set number or name.
     Args:
         N_GPUs - int, number of GPUs to restrict to.
@@ -94,13 +92,11 @@ def AllocateGPU(
 
                 # Get processes from nvidia-smi command
                 gpuprocesses = str(
-                    subprocess.check_output("nvidia-smi", shell=True)) \
-                    .split('\\n')
+                    subprocess.check_output("nvidia-smi", shell=True)).split('\\n')
                 # Parse out numbers, representing GPU no, PID and memory use
                 start = 24
                 gpuprocesses = gpuprocesses[start:len(gpuprocesses) - 2]
-                gpuprocesses = [j.split('MiB')[0] for i, j in
-                                enumerate(gpuprocesses)]
+                gpuprocesses = [j.split('MiB')[0] for i, j in enumerate(gpuprocesses)]
 
                 # Add "fake" zero-memory processes to represent all GPUs
                 extrapids = np.zeros([TOTAL_GPUS, 3])
@@ -108,8 +104,7 @@ def AllocateGPU(
 
                 PIDs = []
                 for p in range(len(gpuprocesses)):
-                    pid = [int(s) for s in gpuprocesses[p].split() if
-                           s.isdigit()]
+                    pid = [int(s) for s in gpuprocesses[p].split() if s.isdigit()]
                     if len(pid) > 0:
                         PIDs.append(pid)
                 # PIDs.pop(0)
@@ -148,8 +143,7 @@ def AllocateGPU(
                 N = N_trials + 1
                 AllocateGPU(N_GPUs=N_GPUs, N_trials=N)
             else:
-                raise ValueError(
-                    "Something is wrong, tried too many times and failed.")
+                raise ValueError("Something is wrong, tried too many times and failed.")
 
     else:
         if verbose:
@@ -159,8 +153,7 @@ def AllocateGPU(
                 print("GPU devices already allocated.")
 
 
-def Merge_dict_with_default(
-        dict_given: dict, dict_default: dict, keys_Needed: list = None):
+def Merge_dict_with_default(dict_given: dict, dict_default: dict, keys_Needed: list = None):
     """Sets default values of dict keys not given"""
 
     keys_default = list(dict_default.keys())
@@ -186,8 +179,7 @@ def file_len(fname: str):
     https://stackoverflow.com/questions/845058/how-to-get-line-count-cheaply-in-python
     """
     try:
-        p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(['wc', '-l', fname], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         result, err = p.communicate()
         if p.returncode != 0:
             raise IOError(err)
@@ -209,15 +201,13 @@ def kill_all_nvidia_processes():
     and you kill the kernel or it dies).
     """
 
-    input("Killing all gpu processes .. continue?" +
-          "Press any button to continue, or Ctrl+C to quit ...")
+    input("Killing all gpu processes .. continue? Press any button to continue, or Ctrl+C to quit ...")
 
     # get gpu processes -- note that this
     # gets processes even if they don't show up
     # in the nvidia-smi command (which happens
     # often with tensorflow)
-    gpuprocesses = str(subprocess.check_output(
-        "fuser -v /dev/nvidia*", shell=True)).split('\\n')
+    gpuprocesses = str(subprocess.check_output("fuser -v /dev/nvidia*", shell=True)).split('\\n')
 
     # preprocess process list
     gpuprocesses = gpuprocesses[0].split(" ")[1:]

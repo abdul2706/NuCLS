@@ -222,8 +222,8 @@ class FasterRCNNConfigs(object):
     fastercnn_params = {
         # load a pre-trained model for classification and return
         # only the features. This is the network trunk
-        # 'backbone': FeatureExtractor(**feature_extractor_params),
-        'backbone': LymphocyteNet3_CM3(depth=18, debug=False),
+        'backbone': FeatureExtractor(**feature_extractor_params),
+        # 'backbone': LymphocyteNet3_CM3(depth=18, debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -283,8 +283,7 @@ class FasterRCNNConfigs(object):
         # ),
     }
     if 'classification_bbox_size' in mohamed_customizations:
-        mohamed_customizations['classification_bbox_size'] *= \
-            transform_parameters['scale_factor']
+        mohamed_customizations['classification_bbox_size'] *= transform_parameters['scale_factor']
 
     # Pack all prams for Faster-Rcnn
     fastercnn_params.update(transform_parameters)
@@ -294,7 +293,7 @@ class FasterRCNNConfigs(object):
 
     # params for training the model
     training_params = {
-        'n_gradient_updates': 10000,  # maskrcnn paper: 160k grad. updates
+        'n_gradient_updates': 16000,  # maskrcnn paper: 160k grad. updates
         'freeze_det_after': 15000,
         'effective_batch_size': 1,
 

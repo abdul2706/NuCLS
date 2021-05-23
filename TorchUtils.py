@@ -1,7 +1,6 @@
 import torch
 import nucls_model.torchvision_detection_utils.transforms as tvdt
 
-
 ISCUDA = torch.cuda.is_available()
 
 
@@ -15,9 +14,7 @@ def tensor_isin(arr1, arr2):
     return result.type(torch.ByteTensor)
 
 
-def transform_dlinput(
-        tlist=None, make_tensor=True, flip_prob=0.5,
-        augment_stain_sigma1=0.5, augment_stain_sigma2=0.5):
+def transform_dlinput(tlist=None, make_tensor=True, flip_prob=0.5, augment_stain_sigma1=0.5, augment_stain_sigma2=0.5):
     """Transform input image data for a DL model.
 
     Parameters
@@ -30,8 +27,7 @@ def transform_dlinput(
     """
     tmap = {
         'hflip': tvdt.RandomHorizontalFlip(prob=flip_prob),
-        'augment_stain': tvdt.RandomHEStain(
-            sigma1=augment_stain_sigma1, sigma2=augment_stain_sigma2),
+        'augment_stain': tvdt.RandomHEStain(sigma1=augment_stain_sigma1, sigma2=augment_stain_sigma2),
     }
     tlist = [] if tlist is None else tlist
     transforms = []

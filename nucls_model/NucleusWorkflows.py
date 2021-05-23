@@ -23,10 +23,12 @@ import nucls_model.torchvision_detection_utils.transforms as tvdt
 from nucls_model.MiscUtils import map_bboxes_using_hungarian_algorithm
 from nucls_model.DataFormattingUtils import parse_sparse_mask_for_use
 from nucls_model.MaskRCNN import MaskRCNN
-from configs.nucleus_style_defaults import NucleusCategories as ncg
+# from configs.nucleus_style_defaults import NucleusCategories as ncg
+import configs.nucleus_style_defaults as NSD
 from pprint import pprint
 
 TAG = '[NucleusWorkflows.py]'
+BASEPATH = os.path.realpath('.')
 
 # %%===========================================================================
 
@@ -197,11 +199,26 @@ def run_one_fasterrcnn_fold(fold: int, cfg, model_root: str, model_name: str, tr
 
 # %%===========================================================================
 
+def inspect(obj_to_inspect, file_prefix):
+    log_file_path = os.path.join(BASEPATH, 'inspect-output', f'{file_prefix}.txt')
+    print(TAG, '[incpect]', file_prefix)
+    print(TAG, '[log_file_path]', log_file_path)
+    with open(log_file_path, 'w') as f:
+        print(dir(obj_to_inspect), file=f)
+        for prop in dir(obj_to_inspect):
+            # if isinstance(getattr(obj_to_inspect, prop), (list, tuple, set, dict, int, float, str)):
+            print(f'[{prop}]', file=f)
+            pprint(getattr(obj_to_inspect, prop), stream=f)
+            print('\n', file=f)
 
 # noinspection DuplicatedCode
 def run_one_maskrcnn_fold(
         fold: int, cfg, model_root: str, model_name: str, qcd_training=True,
         train=True, vis_test=True, n_vis=100, randomvis=True):
+    
+    # for obj_to_inspect in [NSD.DefaultAnnotationStyles, NSD.NucleusCategories, NSD.NameStandardization, NSD.GalleryStyles]:
+    #     inspect(obj_to_inspect, obj_to_inspect.__name__)
+    # return
 
     # FIXME: for prototyping
     if fold == 999:
@@ -223,18 +240,18 @@ def run_one_maskrcnn_fold(
 
     print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
     model = MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)
+    inspect(model, 'model')
     print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
 
     # %% --------------------------------------------------------------
     # Test that it works in forward mode
 
-    model.eval()
-    # x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
-    x = [torch.rand(3, 300, 300)]
-    predictions = model(x)
-    print(TAG, '[predictions]\n')
-    print(predictions)
-    return
+    # model.eval()
+    # # x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
+    # x = [torch.rand(3, 300, 300)]
+    # predictions = model(x)
+    # print(TAG, '[predictions]\n')
+    # print(predictions)
 
     # %% --------------------------------------------------------------
     # Prep data loaders
@@ -244,10 +261,7 @@ def run_one_maskrcnn_fold(
     # copy train/test slides with model itself just to be safe
     for tr in ('train', 'test'):
         fname = f'fold_{fold}_{tr}.csv'
-        copyfile(
-            opj(CoreSetQC.train_test_splits_path, fname),
-            opj(model_folder, fname),
-        )
+        copyfile(opj(CoreSetQC.train_test_splits_path, fname), opj(model_folder, fname))
 
     # training data optionally QCd
     if qcd_training:
@@ -259,10 +273,22 @@ def run_one_maskrcnn_fold(
             root=CoreSetNoQC.dataset_root, dbpath=CoreSetNoQC.dbpath,
             slides=train_slides, **cfg.MaskDatasetConfigs.train_dataset)
 
+    # print(TAG, '[train_dataset.categs_names]')
+    # print(train_dataset.categs_names)
+    # print(TAG, '[train_dataset.labelcodes]')
+    # print(train_dataset.labelcodes)
+    # print(TAG, '[train_dataset.rlabelcodes]')
+    # print(train_dataset.rlabelcodes)
+    inspect(train_dataset, 'train_dataset')
+    # return
+
     # test set is always the QC'd data
     test_dataset = NucleusDatasetMask(
         root=CoreSetQC.dataset_root, dbpath=CoreSetQC.dbpath,
         slides=test_slides, **cfg.MaskDatasetConfigs.test_dataset)
+
+    inspect(test_dataset, 'test_dataset')
+    return
 
     # handle class imbalance
     print(TAG, "cfg.BaseDatasetConfigs.train_loader['shuffle']")
@@ -397,8 +423,7 @@ def run_one_maskrcnn_fold(
         # visualize bounding boxes and masks
         nperrow = 4
         nrows = 1
-        fig, ax = plt.subplots(nrows, nperrow,
-                               figsize=(5 * nperrow, 5.3 * nrows))
+        fig, ax = plt.subplots(nrows, nperrow, figsize=(5 * nperrow, 5.3 * nrows))
 
         # just the image
         axis = ax[0]
@@ -424,9 +449,7 @@ def run_one_maskrcnn_fold(
 
         # true masks
         axis = ax[3]
-        truth_vis = _visualize_annotations_on_rgb(
-            rgb=rgb, contours_list=contoursdf_truth.to_dict(orient='records'),
-            **vis_props)
+        truth_vis = _visualize_annotations_on_rgb(rgb=rgb, contours_list=contoursdf_truth.to_dict(orient='records'), **vis_props)
         axis.imshow(truth_vis)
         axis.set_title('True masks/bboxes + classif.', fontsize=12)
 
@@ -455,8 +478,7 @@ def evaluate_maskrcnn_fold_on_inferred_truth(
     # %% --------------------------------------------------------------
     # Prep data loaders
 
-    slides = read_csv(opj(
-        model_folder, f'fold_{fold}_test.csv')).loc[:, 'slide_name'].tolist()
+    slides = read_csv(opj(model_folder, f'fold_{fold}_test.csv')).loc[:, 'slide_name'].tolist()
     dataset = NucleusDatasetMask(
         root=EvalSets.dataset_roots[evalset][whoistruth],
         dbpath=EvalSets.dbpaths[evalset][whoistruth],
@@ -478,8 +500,7 @@ def evaluate_maskrcnn_fold_on_inferred_truth(
         }
         tsls = evaluateNucleusModel(
             model=model, checkpoint_path=checkpoint_path,
-            dloader=DataLoader(
-                dataset=dataset, **cfg.MaskDatasetConfigs.test_loader),
+            dloader=DataLoader(dataset=dataset, **cfg.MaskDatasetConfigs.test_loader),
             **ecfgs)
 
         # save results
@@ -526,13 +547,10 @@ def evaluate_maskrcnn_fold_on_inferred_truth(
 
         # get true/false positives/negatives
         output_boxes = np.int32(output['boxes'])
-        _, TP, FN, FP = map_bboxes_using_hungarian_algorithm(
-            bboxes1=trg_boxes, bboxes2=output_boxes, min_iou=min_iou)
+        _, TP, FN, FP = map_bboxes_using_hungarian_algorithm(bboxes1=trg_boxes, bboxes2=output_boxes, min_iou=min_iou)
 
         # concat relevant bounding boxes
-        relevant_bboxes = np.concatenate((
-            output_boxes[TP], output_boxes[FP], trg_boxes[FN],
-        ), axis=0)
+        relevant_bboxes = np.concatenate((output_boxes[TP], output_boxes[FP], trg_boxes[FN]), axis=0)
         match_colors = [VisConfigs.MATCHING_COLORS['TP']] * len(TP) \
             + [VisConfigs.MATCHING_COLORS['FP']] * len(FP) \
             + [VisConfigs.MATCHING_COLORS['FN']] * len(FN)
@@ -585,8 +603,7 @@ def evaluate_maskrcnn_fold_on_inferred_truth(
         # visualize bounding boxes and masks
         nperrow = 4
         nrows = 1
-        fig, ax = plt.subplots(nrows, nperrow,
-                               figsize=(5 * nperrow, 5.3 * nrows))
+        fig, ax = plt.subplots(nrows, nperrow, figsize=(5 * nperrow, 5.3 * nrows))
 
         # just the image
         axis = ax[0]

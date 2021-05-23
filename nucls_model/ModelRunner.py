@@ -297,6 +297,7 @@ def trainNucleusModel(
 
     # load weights and optimizer state
     if os.path.exists(checkpoint_path):
+        print(TAG, 'loading checkpoint_path')
         ckpt = load_ckp(checkpoint_path=checkpoint_path, model=model, optimizer=optimizer)
         model = ckpt['model']
         optimizer = ckpt['optimizer']
@@ -383,17 +384,12 @@ def trainNucleusModel(
 
         # plot training and testing
         for i, ntta in enumerate(n_testtime_augmentations):
-            pu.plot_accuracy_progress(
-                checkpoint_path=checkpoint_path,
-                postfix=f'_{ntta}_TestTimeAugs',
-            )
+            pu.plot_accuracy_progress(checkpoint_path=checkpoint_path, postfix=f'_{ntta}_TestTimeAugs')
 
         # create checkpoint and save
         print("*--- SAVING CHECKPOINT!! ---*")
         torch.save(model.state_dict(), f=checkpoint_path)
-        torch.save(
-            optimizer.state_dict(),
-            f=checkpoint_path.replace('.ckpt', '.optim'))
+        torch.save(optimizer.state_dict(), f=checkpoint_path.replace('.ckpt', '.optim'))
         meta = {'epoch': epoch}
         with open(checkpoint_path.replace('.ckpt', '.meta'), 'wb') as f:
             pickle.dump(meta, f)

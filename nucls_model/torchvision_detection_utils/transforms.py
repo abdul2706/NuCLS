@@ -194,8 +194,7 @@ class Cropper(object):
                 size[1] = min(size[1] + pm, h)
 
         # crop rgb
-        img, wpad, hpad, i, j, h, w = self._crop_ops(
-            im=img, size=size, i=i, j=j, h=h, w=w, get_params=get_crop_params)
+        img, wpad, hpad, i, j, h, w = self._crop_ops(im=img, size=size, i=i, j=j, h=h, w=w, get_params=get_crop_params)
 
         # if we just want to crop the image
         if target is None:
@@ -208,9 +207,7 @@ class Cropper(object):
         # .. blob/master/histomicstk/annotations_and_masks/ ..
         # .. annotations_to_object_mask_handler.py
         if 'dense_mask' in target:
-            target['dense_mask'], _, _, _, _, _, _ = self._crop_ops(
-                im=target['dense_mask'], size=size,
-                i=i, j=j, h=h, w=w, get_params=False)
+            target['dense_mask'], _, _, _, _, _, _ = self._crop_ops(im=target['dense_mask'], size=size, i=i, j=j, h=h, w=w, get_params=False)
 
         # crop sparse mask
         if 'masks' in target:
@@ -227,18 +224,14 @@ class Cropper(object):
             bbox = target['boxes']
             bbox[:, [0, 2]] += (wpad - j)
             bbox[:, [1, 3]] += (hpad - i)
-            bbox, keep = remove_degenerate_bboxes(
-                boxes=bbox.to(torch.float32), dim0=w, dim1=h,
-                min_boxside=self.min_boxside)
+            bbox, keep = remove_degenerate_bboxes(boxes=bbox.to(torch.float32), dim0=w, dim1=h, min_boxside=self.min_boxside)
             target['boxes'] = bbox
 
             if 'n_objects' in target:
                 target['n_objects'] = torch.tensor([bbox.shape[0]])
 
             if 'area' in target:
-                target['area'] = (
-                    bbox[:, 3] - bbox[:, 1]) * (
-                    bbox[:, 2] - bbox[:, 0])
+                target['area'] = (bbox[:, 3] - bbox[:, 1]) * (bbox[:, 2] - bbox[:, 0])
 
             # crop vectors (classifications, tags etc)
             for key in ['labels', 'iscrowd', 'ismask', 'scores']:
@@ -248,8 +241,7 @@ class Cropper(object):
         return img, target
 
     def __repr__(self):
-        return self.__class__.__name__ + '(size={0}, padding={1})'.format(
-            self.size, self.padding)
+        return self.__class__.__name__ + '(size={0}, padding={1})'.format(self.size, self.padding)
 
 
 class RandomHorizontalFlip(object):
@@ -276,8 +268,7 @@ class RandomHorizontalFlip(object):
                     target['dense_mask'] = target['dense_mask'].flip(-1)
 
             if 'masks' in target:
-                raise NotImplementedError(
-                    "Flipping sparse masks is not supported for now.")
+                raise NotImplementedError("Flipping sparse masks is not supported for now.")
 
         return image, target
 
@@ -371,8 +362,7 @@ class RandomHEStain(object):
 
     def __call__(self, image, target):
 
-        rgb = rgb_perturb_stain_concentration(
-            im_rgb=np.array(image), sigma1=self.sigma1, sigma2=self.sigma2)
+        rgb = rgb_perturb_stain_concentration(im_rgb=np.array(image), sigma1=self.sigma1, sigma2=self.sigma2)
         return Image.fromarray(rgb), target
 
 
@@ -384,9 +374,7 @@ class RpnProposalAugmenter(object):
     a different part of the feature map and resulting in slighly different
     box features whent he ROIAlign op is done.
     """
-    def __init__(
-            self, ops=None, max_shift=48,
-            min_resize_factor=0.75, max_resize_factor=1.5):
+    def __init__(self, ops=None, max_shift=48, min_resize_factor=0.75, max_resize_factor=1.5):
         self.opmap = {
             'shift': self.shift,
             'resize': self.resize_with_same_aspect,
@@ -399,17 +387,12 @@ class RpnProposalAugmenter(object):
         self.max_resize_factor = max_resize_factor
 
     def shift(self, boxes):
-        shifts = torch.randint(
-            -self.max_shift, self.max_shift,
-            (boxes.shape[0], 2), device=boxes.device)
+        shifts = torch.randint(-self.max_shift, self.max_shift, (boxes.shape[0], 2), device=boxes.device)
         shifts = torch.cat([shifts, shifts], 1)
         return boxes + shifts
 
     def _get_random_sfs(self, n, device):
-        return 0.01 * torch.randint(
-            int(100 * self.min_resize_factor),
-            int(100 * self.max_resize_factor),
-            (n,), device=device)
+        return 0.01 * torch.randint(int(100 * self.min_resize_factor), int(100 * self.max_resize_factor), (n,), device=device)
 
     # noinspection DuplicatedCode
     def _resize(self, boxes, same_aspect: bool):
@@ -419,8 +402,7 @@ class RpnProposalAugmenter(object):
         y_c = (boxes[:, 3] + boxes[:, 1]) * .5
 
         sf_x = self._get_random_sfs(boxes.shape[0], device=boxes.device)
-        sf_y = sf_x if same_aspect else \
-            self._get_random_sfs(boxes.shape[0], device=boxes.device)
+        sf_y = sf_x if same_aspect else self._get_random_sfs(boxes.shape[0], device=boxes.device)
 
         w_half *= sf_x
         h_half *= sf_y

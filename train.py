@@ -42,10 +42,10 @@ def train():
     cfg = load_saved_otherwise_default_model_configs(configs_path=configs_path)
 
     # for reproducibility, copy configs & most relevant code file to results
-    if not os.path.exists(configs_path):
-        save_configs(configs_path=opj(BASEPATH, 'configs', 'nucleus_model_configs.py'), results_path=model_root)
-    save_configs(configs_path=os.path.abspath(__file__), results_path=model_root, warn=False)
-    save_configs(configs_path=opj(BASEPATH, 'nucls_model', 'NucleusWorkflows.py'), results_path=model_root, warn=False)
+    # if not os.path.exists(configs_path):
+    #     save_configs(configs_path=opj(BASEPATH, 'configs', 'nucleus_model_configs.py'), results_path=model_root)
+    # save_configs(configs_path=os.path.abspath(__file__), results_path=model_root, warn=False)
+    # save_configs(configs_path=opj(BASEPATH, 'nucls_model', 'NucleusWorkflows.py'), results_path=model_root, warn=False)
 
     print(TAG, '[cfg]')
     pprint(cfg)
@@ -56,7 +56,7 @@ def train():
     for fold in args.f:
         run_one_maskrcnn_fold(
             fold=fold, cfg=cfg, model_root=model_root, model_name=model_name,
-            qcd_training=args.qcd, train=args.train, vis_test=args.vistest)
+            qcd_training=args.qcd, train=args.train, vis_test=args.vistest, nvis=10)
 
     # %%===========================================================================
 

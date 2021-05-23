@@ -1,9 +1,18 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.model_zoo as model_zoo
 from torch.nn import Module, Conv2d, BatchNorm2d, MaxPool2d, AvgPool2d, AdaptiveAvgPool2d, ReLU, Sequential, Linear, Dropout, Softmax
 from nucls_model.ResNet import ResNet
 from nucls_model.ResNetCBAM import ResNetCBAM
+
+model_urls = {
+    'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
+    'resnet34': 'https://download.pytorch.org/models/resnet34-333f7ec4.pth',
+    'resnet50': 'https://download.pytorch.org/models/resnet50-19c8e357.pth',
+    'resnet101': 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth',
+    'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
+}
 
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
@@ -113,10 +122,10 @@ class LymphocyteNet3_CM3(Module):
     
     def __init__(self, depth, debug, **kwargs):
         super(LymphocyteNet3_CM3, self).__init__()
-        
+
         self.debug = debug
         self.module_name = 'LymphocyteNet3_CM3'
-        
+
         self.backbone1 = ResNet(depth=depth, debug=False)
         self.backbone2 = ResNetCBAM(depth=depth, debug=False)
 
@@ -131,6 +140,9 @@ class LymphocyteNet3_CM3(Module):
         self.blocks = [self.block4]
 
         self.out_channels = planes[-1]
+
+        self.backbone1.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
+        self.backbone2.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
@@ -183,8 +195,8 @@ class LymphocyteNet3_CM3(Module):
 
         outs = x1[3] + x2[3]
         outs = self.block4(outs)
-        print(self.module_name, '[type(outs)][outs.shape]')
-        print(type(outs[0]), outs.shape)
+        # print(self.module_name, '[type(outs)][outs.shape]')
+        # print(type(outs[0]), outs.shape)
         return outs
 
     # def init_weights(self, pretrained=None):

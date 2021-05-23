@@ -283,10 +283,8 @@ def evaluate(model, data_loader, device, maxDets=None, crop_inference_to_fov=Fal
         dst.set_labelmaps()
 
         metric_logger_objectness = utils.MetricLogger(delimiter="  ")
-        coco_objectness = get_coco_api_from_dataset(
-            dst, crop_inference_to_fov=crop_inference_to_fov)
-        coco_evaluator_objectness = CocoEvaluator(
-            coco_objectness, iou_types, maxDets=maxDets)
+        coco_objectness = get_coco_api_from_dataset(dst, crop_inference_to_fov=crop_inference_to_fov)
+        coco_evaluator_objectness = CocoEvaluator(coco_objectness, iou_types, maxDets=maxDets)
 
         # IMPORTANT: THIS LINE IS CRITICAL
         dst.do_classification = True

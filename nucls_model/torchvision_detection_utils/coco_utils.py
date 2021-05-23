@@ -214,8 +214,7 @@ def get_coco_api_from_dataset(dataset, crop_inference_to_fov=False):
             dataset = dataset.dataset
     if isinstance(dataset, torchvision.datasets.CocoDetection):
         return dataset.coco
-    return convert_to_coco_api(
-        dataset, crop_inference_to_fov=crop_inference_to_fov)
+    return convert_to_coco_api(dataset, crop_inference_to_fov=crop_inference_to_fov)
 
 
 class CocoDetection(torchvision.datasets.CocoDetection):
