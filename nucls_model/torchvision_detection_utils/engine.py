@@ -18,6 +18,7 @@ import nucls_model.torchvision_detection_utils.transforms as tvdt  # noqa
 from nucls_model.DataLoadingUtils import _crop_all_to_fov  # noqa
 from nucls_model.MiscUtils import map_bboxes_using_hungarian_algorithm  # noqa
 
+TAG = '[engine.py]'
 
 # noinspection LongLine
 def train_one_epoch(
@@ -269,7 +270,10 @@ def evaluate(model, data_loader, device, maxDets=None, crop_inference_to_fov=Fal
 
     # combined detection & classification precision/recall
     dst = data_loader.dataset
+    print(TAG, '[before coco get_coco_api_from_dataset]')
     coco = get_coco_api_from_dataset(dst, crop_inference_to_fov=crop_inference_to_fov)
+    print(TAG, '[coco]', coco.cats)
+    print(TAG, '[after coco get_coco_api_from_dataset]')
     coco_evaluator = CocoEvaluator(coco, iou_types, maxDets=maxDets)
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = 'Test:'
@@ -283,7 +287,10 @@ def evaluate(model, data_loader, device, maxDets=None, crop_inference_to_fov=Fal
         dst.set_labelmaps()
 
         metric_logger_objectness = utils.MetricLogger(delimiter="  ")
+        print(TAG, '[before coco_objectness get_coco_api_from_dataset]')
         coco_objectness = get_coco_api_from_dataset(dst, crop_inference_to_fov=crop_inference_to_fov)
+        print(TAG, '[coco_objectness]', coco_objectness.cats)
+        print(TAG, '[after coco_objectness get_coco_api_from_dataset]')
         coco_evaluator_objectness = CocoEvaluator(coco_objectness, iou_types, maxDets=maxDets)
 
         # IMPORTANT: THIS LINE IS CRITICAL
@@ -310,6 +317,7 @@ def evaluate(model, data_loader, device, maxDets=None, crop_inference_to_fov=Fal
             return dst.categs_names
         return dst.supercategs_names
 
+    # print(TAG, '[before evaluation loop]')
     for images, targets in metric_logger.log_every(data_loader, 100, header):
         images = list(img.to(device) for img in images)
         targets = list(targets)
@@ -412,6 +420,10 @@ def evaluate(model, data_loader, device, maxDets=None, crop_inference_to_fov=Fal
             coco_evaluator_objectness.update(res)
             evaluator_time = time.time() - evaluator_time
             metric_logger_objectness.update(model_time=model_time, evaluator_time=evaluator_time)
+            
+            # break
+        
+    # print(TAG, '[after evaluation loop]')
 
     # combined detection & classification precision/recall
     # gather the stats from all processes & accumulate preds from all imgs

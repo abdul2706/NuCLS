@@ -3,13 +3,19 @@
 Implements the Generalized R-CNN framework
 """
 
-from collections import OrderedDict
-import torch
-from torch import nn
 import warnings
-from torch.jit.annotations import Tuple, List, Dict, Optional
-from torch import Tensor
+from pprint import pprint
+from datetime import datetime
+from collections import OrderedDict
 
+import torch
+import torch.nn as nn
+from torch import Tensor
+from torch.jit.annotations import Tuple, List, Dict, Optional
+
+from nucls_model.torchvision_detection_utils.utils import save_sample
+
+TAG = '[GeneralizedRCNN.py]'
 
 # noinspection LongLine
 def _check_for_degenerate_boxes(trgts):
@@ -42,9 +48,7 @@ class GeneralizedRCNN(nn.Module):
             of object proposals from the RPN output.
     """
 
-    def __init__(
-            self, backbone, rpn, roi_heads, transform,
-            proposal_augmenter=None, n_testtime_augmentations=0):
+    def __init__(self, backbone, rpn, roi_heads, transform, proposal_augmenter=None, n_testtime_augmentations=0):
         super(GeneralizedRCNN, self).__init__()
         self.transform = transform
         self.backbone = backbone
@@ -98,7 +102,14 @@ class GeneralizedRCNN(nn.Module):
             assert len(val) == 2
             original_image_sizes.append((val[0], val[1]))
 
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, type(images), len(images))
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[images[0]]', type(images[0]), images[0].shape, images[0].min(), images[0].max())
+        # save_sample({'img': images[0]}, '04-generalizedrcnn-before-transform')
         images, targets = self.transform(images, targets)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[images[0]]', type(images[0]), images[0].shape, images[0].min(), images[0].max())
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[images]')
+        # print(type(images.tensors), images.tensors.shape)
+        # save_sample({'img': images[0]}, '05-generalizedrcnn-after-transform')
 
         # Check for degenerate boxes
         _check_for_degenerate_boxes(targets)
@@ -107,6 +118,9 @@ class GeneralizedRCNN(nn.Module):
         if isinstance(features, torch.Tensor):
             features = OrderedDict([('0', features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[proposals]', len(proposals), proposals[0].shape)
+        # pprint(proposals)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[proposal_losses]', proposal_losses)
 
         _cprobabs = None
         if (not self.training) and (self.n_testtime_augmentations > 0):
@@ -132,8 +146,15 @@ class GeneralizedRCNN(nn.Module):
         detections, detector_losses = self.roi_heads(
             features=features, proposals=proposals, _cprobabs=_cprobabs,
             image_shapes=images.image_sizes, targets=targets)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[detector_losses]', detector_losses)
 
         detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[detections]', len(detections), detections[0].keys())
+        # print(TAG, '[boxes]', detections[0]['boxes'].shape, detections[0]['boxes'].min(dim=0), detections[0]['boxes'].max(dim=0))
+        # print(TAG, '[labels]', detections[0]['labels'].shape)
+        # print(TAG, '[masks]', detections[0]['masks'].shape)
+        # print(TAG, '[probabs]', detections[0]['probabs'].shape)
+        # print(TAG, '[scores]', detections[0]['scores'].shape)
 
         losses = {}
         losses.update(detector_losses)

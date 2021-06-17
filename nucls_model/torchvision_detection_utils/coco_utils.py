@@ -159,8 +159,7 @@ def convert_to_coco_api(ds, crop_inference_to_fov=False):
         img, targets = ds[img_idx]
 
         if crop_inference_to_fov:
-            img, targets, _ = _crop_all_to_fov(
-                images=[img], targets=[targets], cropper=cropper)
+            img, targets, _ = _crop_all_to_fov(images=[img], targets=[targets], cropper=cropper)
             img = img[0]
             targets = targets[0]
 

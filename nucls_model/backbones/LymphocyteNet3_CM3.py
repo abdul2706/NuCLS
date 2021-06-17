@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from torch.nn import Module, Conv2d, BatchNorm2d, MaxPool2d, AvgPool2d, AdaptiveAvgPool2d, ReLU, Sequential, Linear, Dropout, Softmax
-from nucls_model.ResNet import ResNet
-from nucls_model.ResNetCBAM import ResNetCBAM
+from . import ResNet
+from . import ResNetCBAM
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',

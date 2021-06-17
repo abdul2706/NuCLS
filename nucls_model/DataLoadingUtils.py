@@ -1,19 +1,21 @@
 import os
-from os.path import join as opj
-from collections import Counter
-from copy import deepcopy
-from imageio import imread
 import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
 import torch
+
 from PIL import Image
 from sklearn.model_selection import KFold
 from tqdm import tqdm
+from copy import deepcopy
+from imageio import imread
+from datetime import datetime
+from collections import Counter
+from os.path import join as opj
 
 import nucls_model.torchvision_detection_utils.transforms as tvdt  # noqa
 from GeneralUtils import connect_to_sqlite, reverse_dict  # noqa
-from nucls_model.torchvision_detection_utils.utils import collate_fn  # noqa
+from nucls_model.torchvision_detection_utils.utils import collate_fn, save_sample  # noqa
 from configs.nucleus_style_defaults import Interrater, DefaultAnnotationStyles, NucleusCategories  # noqa
 from nucls_model.DataFormattingUtils import from_dense_to_sparse_object_mask  # noqa
 from TorchUtils import transform_dlinput  # noqa
@@ -340,12 +342,11 @@ class NucleusDataset(NucleusDatasetBase):
         if self.load_once:
             boxdf = self.boxdf.loc[self.boxdf.loc[:, 'fov_id'] == self.fovids[fovname], :].copy()
         else:
-            boxdf = pd.read_sql_query(f"""
-                SELECT "xmin", "ymin", "xmax", "ymax", "group", "type"
-                FROM "annotation_elements"
-                WHERE "fov_id" = {self.fovids[fovname]}
-                  AND "group" NOT LIKE "fov%"
-            ;""", con=self.dbcon)
+            boxdf = pd.read_sql_query(f"""SELECT "xmin", "ymin", "xmax", "ymax", "group", "type"
+                                          FROM "annotation_elements"
+                                          WHERE "fov_id" = {self.fovids[fovname]}
+                                          AND "group" NOT LIKE "fov%";
+                                        """, con=self.dbcon)
         return boxdf
 
     def _get_fovloc(self, fovname):
@@ -371,6 +372,8 @@ class NucleusDataset(NucleusDatasetBase):
         # rgb_path = opj(self.root, "rgbs", f"{fovname}.png")
         rgb_path = opj(self.root, "rgbs_colorNormalized", f"{fovname}.png")
         rgb = Image.fromarray(imread(rgb_path)[..., :3])
+        image = np.array(rgb)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[2][rgb image loaded]', type(image), image.shape, image.min(), image.max())
 
         # get bounding box coordinates for each object
         boxdf = self._get_boxdf(fovname=fovname) if boxdf is None else boxdf
@@ -379,9 +382,7 @@ class NucleusDataset(NucleusDatasetBase):
             boxes=boxdf.loc[:, ['xmin', 'ymin', 'xmax', 'ymax']].values,
             dim0=w, dim1=h, min_boxside=self.cropper.min_boxside)
         boxdf = boxdf.iloc[keep, :]
-        boxes = torch.as_tensor(
-            boxdf.loc[:, ['xmin', 'ymin', 'xmax', 'ymax']].values,
-            dtype=FDTYPE)
+        boxes = torch.as_tensor(boxdf.loc[:, ['xmin', 'ymin', 'xmax', 'ymax']].values, dtype=FDTYPE)
 
         if 'ismask' in target:
             target['ismask'] = target['ismask'][keep]
@@ -397,8 +398,7 @@ class NucleusDataset(NucleusDatasetBase):
             'boxes': boxes,
             'image_id': torch.tensor([self.fovids[fovname]]),
             'n_objects': torch.tensor([boxes.shape[0]]),
-            'area': (boxes[:, 3] - boxes[:, 1]) * (
-                    boxes[:, 2] - boxes[:, 0]),
+            'area': (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0]),
             'fovloc': torch.tensor(fovloc_array.values, dtype=torch.int32),
         })
 
@@ -420,12 +420,24 @@ class NucleusDataset(NucleusDatasetBase):
                 j=fovloc['xmin'], w=fovloc['xmax'] - fovloc['xmin'],
             )
 
+        image = np.array(rgb)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[3][rgb from fov cropper]', type(image), image.shape, image.min(), image.max())
+        # save_sample({'img': rgb}, '01-dataloadingutils-crop_to_fov')
+
         # maybe random crop (possibly after cropping to fov)
         if self.crop_size is not None:
             rgb, target = self.cropper(rgb=rgb, targets=target)
 
+        image = np.array(rgb)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[4][rgb from 300px cropper]', type(image), image.shape, image.min(), image.max())
+        # save_sample({'img': rgb}, '02-dataloadingutils-random-crop')
+
         # apply transforms (eg random flip)
         rgb, target = self.transforms(rgb, target)
+
+        image = np.array(rgb)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[5][rgb from transforms]', type(image), image.shape, image.min(), image.max())
+        # save_sample({'img': rgb}, '03-dataloadingutils-transforms')
 
         return rgb, target
 
@@ -457,10 +469,12 @@ class NucleusDatasetMask(NucleusDataset):
 
         # load mask
         mask = imread(opj(self.root, "mask", f"{fovname}.png"))[..., :3]
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[1][mask image loaded]', type(mask), mask.shape, mask.min(), mask.max())
 
         # get rid of FOV annotation
         fovmask = mask[..., 0] == self.fovcode
         mask[fovmask] = 0
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[mask]', type(mask), mask.shape, mask.min(), mask.max())
 
         # init & assign target
         target = {
@@ -484,9 +498,11 @@ class NucleusDatasetMask(NucleusDataset):
 
         # pass image and target through cropper, transforms etc
         rgb, target = self.getitem(idx, target=target, boxdf=boxdf)
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[6][rgb returned from getitem method]', type(rgb), rgb.shape, rgb.min(), rgb.max())
 
         # split the flat mask into a set of binary masks
         masks, _ = from_dense_to_sparse_object_mask(dense_mask=np.uint8(target['dense_mask']), boxes=np.int32(target['boxes']))
+        # print(datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, '[7][masks returned from from_dense_to_sparse_object_mask]', type(masks), masks.shape, masks.min(), masks.max())
 
         # convert to tensor
         del target['dense_mask']
@@ -644,8 +660,7 @@ class NucleusDatasetMask_IMPRECISE(NucleusDataset):
 
 
 # noinspection PyShadowingNames
-def _crop_all_to_fov(
-        images, targets, outputs=None, cropper=None, crop_targets=True):
+def _crop_all_to_fov(images, targets, outputs=None, cropper=None, crop_targets=True):
     """Crop to fov so that the model looks at a wider field than it
     does inference? This is also important since the dataset I made
     deliberately looks beyond FOV to include full extent of nuclei that

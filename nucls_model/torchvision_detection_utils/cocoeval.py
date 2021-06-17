@@ -244,7 +244,7 @@ class COCOeval:
         else:
             gt = [_ for cId in p.catIds for _ in self._gts[imgId,cId]]
             dt = [_ for cId in p.catIds for _ in self._dts[imgId,cId]]
-        if len(gt) == 0 and len(dt) ==0:
+        if len(gt) == 0 and len(dt) == 0:
             return None
 
         for g in gt:

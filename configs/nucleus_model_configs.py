@@ -1,3 +1,4 @@
+from nucls_model.backbones.ResNet2 import ResNet2
 import os
 from os.path import join as opj
 import sys
@@ -15,7 +16,7 @@ from nucls_model.torchvision_detection_utils.utils import collate_fn  # noqa
 from nucls_model.FeatureExtractor import FeatureExtractor  # noqa
 from nucls_model.FasterRCNN import ClassificationConvolutions, SelfAttentionEncoder  # noqa
 from nucls_model.MaskRCNN import MaskRCNNHeads  # noqa
-from nucls_model.LymphocyteNet3_CM3 import LymphocyteNet3_CM3
+from nucls_model.backbones import *
 
 
 class CoreSetQC(object):
@@ -69,8 +70,7 @@ class EvalSets(object):
         dbpaths[ev] = {}
         for wit in ['Ps', 'NPs']:
             dataset_roots[ev][wit] = opj(dbbase, f'{wit}AreTruth_{ev}')
-            dbpaths[ev][wit] = opj(
-                dbbase, f'RcnnAnchors_{ev}_{wit}_AreTruth.sqlite')
+            dbpaths[ev][wit] = opj(dbbase, f'RcnnAnchors_{ev}_{wit}_AreTruth.sqlite')
 
 
 class BaseDatasetConfigs(object):
@@ -222,8 +222,9 @@ class FasterRCNNConfigs(object):
     fastercnn_params = {
         # load a pre-trained model for classification and return
         # only the features. This is the network trunk
-        'backbone': FeatureExtractor(**feature_extractor_params),
+        # 'backbone': FeatureExtractor(**feature_extractor_params),
         # 'backbone': LymphocyteNet3_CM3(depth=18, debug=False),
+        'backbone': ResNetCBAM(depth=18, pretrained=True, debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -293,9 +294,9 @@ class FasterRCNNConfigs(object):
 
     # params for training the model
     training_params = {
-        'n_gradient_updates': 16000,  # maskrcnn paper: 160k grad. updates
-        'freeze_det_after': 15000,
-        'effective_batch_size': 1,
+        'n_gradient_updates': 32000,  # maskrcnn paper: 160k grad. updates
+        'freeze_det_after': 30000,
+        'effective_batch_size': 2,
 
         # monitoring params
         'print_freq': 12,  # meaningful if >= effective_batch_size / batch_size

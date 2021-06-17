@@ -4,6 +4,13 @@ from os.path import join as opj
 import argparse
 from pprint import pprint
 
+# GPU allocation MUST happen before importing other modules
+from GeneralUtils import save_configs, maybe_mkdir, AllocateGPU
+
+from nucls_model.MiscUtils import load_saved_otherwise_default_model_configs
+from configs.nucleus_model_configs import CoreSetQC, CoreSetNoQC
+from nucls_model.NucleusWorkflows import run_one_maskrcnn_fold
+
 def train():
     parser = argparse.ArgumentParser(description='Train nucleus model.')
     parser.add_argument('-f', type=int, default=[1], nargs='+', help='fold(s) to run')
@@ -16,13 +23,7 @@ def train():
     args.train = bool(args.train)
     args.vistest = bool(args.vistest)
 
-    # GPU allocation MUST happen before importing other modules
-    from GeneralUtils import save_configs, maybe_mkdir, AllocateGPU
     # AllocateGPU(GPUs_to_use=args.g)
-
-    from nucls_model.MiscUtils import load_saved_otherwise_default_model_configs
-    from configs.nucleus_model_configs import CoreSetQC, CoreSetNoQC
-    from nucls_model.NucleusWorkflows import run_one_maskrcnn_fold
 
     # %%===========================================================================
     # Configs
@@ -56,7 +57,7 @@ def train():
     for fold in args.f:
         run_one_maskrcnn_fold(
             fold=fold, cfg=cfg, model_root=model_root, model_name=model_name,
-            qcd_training=args.qcd, train=args.train, vis_test=args.vistest, nvis=10)
+            qcd_training=args.qcd, train=args.train, vis_test=args.vistest, n_vis=10)
 
     # %%===========================================================================
 

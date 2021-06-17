@@ -286,9 +286,7 @@ class MaskRCNNHeads(nn.Sequential):
         d = OrderedDict()
         next_feature = in_channels
         for layer_idx, layer_features in enumerate(layers, 1):
-            d["mask_fcn{}".format(layer_idx)] = nn.Conv2d(
-                next_feature, layer_features, kernel_size=3,
-                stride=1, padding=dilation, dilation=dilation)
+            d["mask_fcn{}".format(layer_idx)] = nn.Conv2d(next_feature, layer_features, kernel_size=3, stride=1, padding=dilation, dilation=dilation)
             d["relu{}".format(layer_idx)] = nn.ReLU(inplace=True)
             next_feature = layer_features
 
@@ -317,14 +315,12 @@ class MaskRCNNPredictor(nn.Sequential):
 
 
 model_urls = {
-    'maskrcnn_resnet50_fpn_coco':
-        'https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth',  # noqa
+    'maskrcnn_resnet50_fpn_coco': 'https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth',  # noqa
 }
 
 
 # noinspection LongLine
-def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
-                          num_classes=91, pretrained_backbone=True, trainable_backbone_layers=3, **kwargs):
+def maskrcnn_resnet50_fpn(pretrained=False, progress=True, num_classes=91, pretrained_backbone=True, trainable_backbone_layers=3, **kwargs):
     """
     Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.
 
@@ -384,7 +380,6 @@ def maskrcnn_resnet50_fpn(pretrained=False, progress=True,
     backbone = resnet_fpn_backbone('resnet50', pretrained_backbone, trainable_layers=trainable_backbone_layers)
     model = MaskRCNN(backbone, num_classes, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls['maskrcnn_resnet50_fpn_coco'],
-                                              progress=progress)
+        state_dict = load_state_dict_from_url(model_urls['maskrcnn_resnet50_fpn_coco'], progress=progress)
         model.load_state_dict(state_dict)
     return model

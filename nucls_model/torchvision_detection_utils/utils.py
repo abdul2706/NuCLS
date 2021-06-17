@@ -11,6 +11,11 @@ import torch.distributed as dist
 import errno
 import os
 
+import cv2
+import numpy as np
+from PIL import Image
+
+TAG = '[utils.py]'
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
@@ -330,3 +335,31 @@ def init_distributed_mode(args):
                                          world_size=args.world_size, rank=args.rank)
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
+
+def save_sample(sample, title):
+    image = sample['img']
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+    elif isinstance(image, torch.Tensor):
+        image = image.permute((1, 2, 0)).numpy()
+    bboxes = sample['bboxes'] if 'bboxes' in sample else np.zeros((1, 1))
+    labels = sample['labels'] if 'labels' in sample else np.zeros((1, 1))
+    masks = sample['masks'].masks if 'masks' in sample else np.zeros((1, 1))
+
+    print(datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, title, '[image]', type(image), image.shape)
+    print(datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, title, '[bboxes]', type(bboxes), bboxes.shape)
+    print(datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, title, '[labels]', type(labels), labels.shape)
+    print(datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, title, '[masks]', type(masks), masks.shape)
+
+    filename = f'testing-outputs/{title}.jpg'
+    image = make_rgb_0_255(image)
+    cv2.imwrite(filename, image)
+    print(datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S.%f %p"), TAG, title, 'saved image as', filename)
+
+def make_rgb_0_255(image):
+    image = image - image.min()
+    image = image / image.max()
+    image = image * 255
+    image = image.astype(np.uint8)
+    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    return image

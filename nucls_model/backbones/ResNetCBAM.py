@@ -3,12 +3,7 @@ import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
 import torch.utils.checkpoint as cp
-
-# from mmcv.cnn import (build_conv_layer, build_norm_layer, build_plugin_layer, constant_init, kaiming_init)
-# from mmcv.runner import load_checkpoint
-# from mmdet.utils import get_root_logger
-
-# from mmdet.models.builder import BACKBONES
+from torchvision.models.utils import load_state_dict_from_url
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -57,12 +52,16 @@ class SpatialAttention(nn.Module):
         x = self.conv1(x)
         return self.sigmoid(x)
 
-class BasicBlock(nn.Module):
+class BasicBlockCBAM(nn.Module):
     expansion = 1
 
-    # def __init__(self, inplanes, planes, stride=1, downsample=None, debug=False):
     def __init__(self, inplanes, planes, stride=1, downsample=None, use_dropout=False, debug=False):
-        super(BasicBlock, self).__init__()
+        super(BasicBlockCBAM, self).__init__()
+
+        self.module_name = 'BasicBlockCBAM'
+        self.debug = debug
+        self.planes = planes
+
         self.conv1 = conv3x3(inplanes, planes, stride)
         self.bn1 = nn.BatchNorm2d(planes)
         self.relu = nn.ReLU(inplace=True)
@@ -174,22 +173,26 @@ class BottleneckCBAM(nn.Module):
 class ResNetCBAM(nn.Module):
 
     architectures = {
-        18: [BasicBlock, [2, 2, 2, 2]],
-        34: [BasicBlock, [3, 4, 6, 3]],
+        18: [BasicBlockCBAM, [2, 2, 2, 2]],
+        34: [BasicBlockCBAM, [3, 4, 6, 3]],
         50: [BottleneckCBAM, [3, 4, 6, 3]],
         101: [BottleneckCBAM, [3, 4, 23, 3]],
         152: [BottleneckCBAM, [3, 8, 36, 3]]
     }
     
-    def __init__(self, depth, debug=False):
+    def __init__(self, depth=18, pretrained=False, debug=False):
         super(ResNetCBAM, self).__init__()
 
         self.module_name = 'ResNetCBAM'
         self.debug = debug
+        self.pretrained = pretrained
         self.inplanes = 64
         self.depth = depth
+        self.kernel_size = 3
+        self.std = 1
+        self.epoch = 1
+        self.out_channels=512
         block, layers = self.architectures[depth]
-        # num_classes = 1
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
@@ -208,11 +211,13 @@ class ResNetCBAM(nn.Module):
                 m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
-        for layer in [self.layer1, self.layer2]:
-            layer.training = False
-            layer.eval()
-            for param in layer.parameters():
-                param.requires_grad = False
+        # for layer in [self.layer1, self.layer2]:
+        #     layer.training = False
+        #     layer.eval()
+        #     for param in layer.parameters():
+        #         param.requires_grad = False
+
+        self.init_weights(self.pretrained)
 
     def _make_layer(self, block, planes, blocks, stride=1, use_dropout=False):
         downsample = None
@@ -250,8 +255,8 @@ class ResNetCBAM(nn.Module):
 
         return (level1, level2, level3, level4)
 
-    # def init_weights(self, pretrained=None):
-    #     print(f'{self.module_name} pretrained -> {pretrained}')
-    #     if pretrained:
-    #         logger = get_root_logger()
-    #         load_checkpoint(self, pretrained, strict=False, logger=logger)
+    def init_weights(self, pretrained=None):
+        print(f'{self.module_name} pretrained -> {pretrained}')
+        if pretrained:
+            state_dict = load_state_dict_from_url(model_urls[f'resnet{self.depth}'], progress=True)
+            self.load_state_dict(state_dict, strict=False)

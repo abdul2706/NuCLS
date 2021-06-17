@@ -297,7 +297,7 @@ def trainNucleusModel(
 
     # load weights and optimizer state
     if os.path.exists(checkpoint_path):
-        print(TAG, 'loading checkpoint_path')
+        print(TAG, f'loading file from: {checkpoint_path}')
         ckpt = load_ckp(checkpoint_path=checkpoint_path, model=model, optimizer=optimizer)
         model = ckpt['model']
         optimizer = ckpt['optimizer']
@@ -310,10 +310,7 @@ def trainNucleusModel(
     if lr_scheduler_type is None:
         lr_scheduler = None
     elif lr_scheduler_type == 'step':
-        lr_scheduler_params = lr_scheduler_params or {
-            'step_size': 50,
-            'gamma': 0.1,
-        }
+        lr_scheduler_params = lr_scheduler_params or {'step_size': 50, 'gamma': 0.1}
         grup = -1 if start_epoch == 1 else (start_epoch - 1) * data_loader.batch_size
         lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer=optimizer, last_epoch=grup, **lr_scheduler_params)
     else:
@@ -368,6 +365,7 @@ def trainNucleusModel(
                         device=device, test_maxDets=test_maxDets,
                         crop_inference_to_fov=crop_inference_to_fov)
                 )
+                return
 
         # save training loss
         _save_training_losses(

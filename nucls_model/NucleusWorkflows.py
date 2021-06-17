@@ -1,31 +1,33 @@
-import sys
 import os
-from os.path import join as opj
-import matplotlib.pylab as plt
+import sys
 import numpy as np
+import matplotlib.pylab as plt
+from os.path import join as opj
 from pandas import Series, DataFrame, read_csv, concat
+from shutil import copyfile
+from pprint import pprint
+
 import torch
 from torch.utils.data import DataLoader, WeightedRandomSampler
-from shutil import copyfile
+
 from histomicstk.annotations_and_masks.annotations_to_masks_handler import _visualize_annotations_on_rgb
 from histomicstk.annotations_and_masks.masks_to_annotations_handler import get_contours_from_mask
 from histomicstk.features.compute_nuclei_features import compute_nuclei_features
 from histomicstk.preprocessing.color_deconvolution import color_deconvolution_routine
 
+import nucls_model.PlottingUtils as pu
+import nucls_model.torchvision_detection_utils.transforms as tvdt
 from GeneralUtils import maybe_mkdir
 from nucls_model.DataLoadingUtils import NucleusDataset, get_cv_fold_slides, _crop_all_to_fov, NucleusDatasetMask, NucleusDatasetMask_IMPRECISE
-import nucls_model.PlottingUtils as pu
 from nucls_model.FasterRCNN import FasterRCNN
 from nucls_model.PartialMaskRCNN import PartialMaskRCNN
+from nucls_model.MaskRCNN import MaskRCNN
 from nucls_model.ModelRunner import trainNucleusModel, load_ckp, evaluateNucleusModel
-from configs.nucleus_model_configs import CoreSetQC, CoreSetNoQC, EvalSets, VisConfigs
-import nucls_model.torchvision_detection_utils.transforms as tvdt
 from nucls_model.MiscUtils import map_bboxes_using_hungarian_algorithm
 from nucls_model.DataFormattingUtils import parse_sparse_mask_for_use
-from nucls_model.MaskRCNN import MaskRCNN
+from configs.nucleus_model_configs import CoreSetQC, CoreSetNoQC, EvalSets, VisConfigs
 # from configs.nucleus_style_defaults import NucleusCategories as ncg
 import configs.nucleus_style_defaults as NSD
-from pprint import pprint
 
 TAG = '[NucleusWorkflows.py]'
 BASEPATH = os.path.realpath('.')
@@ -223,7 +225,7 @@ def run_one_maskrcnn_fold(
     # FIXME: for prototyping
     if fold == 999:
         cfg.MaskRCNNConfigs.training_params.update({
-            'effective_batch_size': 4,
+            'effective_batch_size': 1,
             'smoothing_window': 1,
             'test_evaluate_freq': 1,
         })
@@ -235,14 +237,14 @@ def run_one_maskrcnn_fold(
     # %% --------------------------------------------------------------
     # Init model
 
-    print(TAG, '[cfg.MaskRCNNConfigs.maskrcnn_params]')
-    pprint(cfg.MaskRCNNConfigs.maskrcnn_params)
+    # print(TAG, '[cfg.MaskRCNNConfigs.maskrcnn_params]')
+    # pprint(cfg.MaskRCNNConfigs.maskrcnn_params)
 
     print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
     model = MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)
-    inspect(model, 'model')
+    # inspect(model, 'model')
+    print(model)
     print(TAG, '[MaskRCNN(**cfg.MaskRCNNConfigs.maskrcnn_params)]')
-
     # %% --------------------------------------------------------------
     # Test that it works in forward mode
 
@@ -273,13 +275,14 @@ def run_one_maskrcnn_fold(
             root=CoreSetNoQC.dataset_root, dbpath=CoreSetNoQC.dbpath,
             slides=train_slides, **cfg.MaskDatasetConfigs.train_dataset)
 
-    # print(TAG, '[train_dataset.categs_names]')
-    # print(train_dataset.categs_names)
-    # print(TAG, '[train_dataset.labelcodes]')
-    # print(train_dataset.labelcodes)
-    # print(TAG, '[train_dataset.rlabelcodes]')
-    # print(train_dataset.rlabelcodes)
-    inspect(train_dataset, 'train_dataset')
+    # rgb, target = train_dataset.__getitem__(0)
+    # with open(opj('inspect-output', 'train_dataset-getitem-0.txt'), 'w') as f:
+    #     print(TAG, '[rgb]', file=f)
+    #     print(rgb, file=f)
+    #     print(file=f)
+    #     print(TAG, '[target]', file=f)
+    #     print(target, file=f)
+    # inspect(train_dataset, 'train_dataset')
     # return
 
     # test set is always the QC'd data
@@ -287,12 +290,12 @@ def run_one_maskrcnn_fold(
         root=CoreSetQC.dataset_root, dbpath=CoreSetQC.dbpath,
         slides=test_slides, **cfg.MaskDatasetConfigs.test_dataset)
 
-    inspect(test_dataset, 'test_dataset')
-    return
+    # inspect(test_dataset, 'test_dataset')
+    # return
 
     # handle class imbalance
-    print(TAG, "cfg.BaseDatasetConfigs.train_loader['shuffle']")
-    print(cfg.BaseDatasetConfigs.train_loader['shuffle'])
+    # print(TAG, "cfg.BaseDatasetConfigs.train_loader['shuffle']")
+    # print(cfg.BaseDatasetConfigs.train_loader['shuffle'])
     if cfg.MaskRCNNConfigs.handle_class_imbalance:
         del cfg.BaseDatasetConfigs.train_loader['shuffle']
         cfg.BaseDatasetConfigs.train_loader['sampler'] = WeightedRandomSampler(
@@ -310,7 +313,6 @@ def run_one_maskrcnn_fold(
             data_loader=DataLoader(dataset=train_dataset, **cfg.MaskDatasetConfigs.train_loader),
             data_loader_test=DataLoader(dataset=test_dataset, **cfg.MaskDatasetConfigs.test_loader),
             **cfg.MaskRCNNConfigs.training_params)
-
     elif os.path.exists(checkpoint_path):
         ckpt = load_ckp(checkpoint_path=checkpoint_path, model=model)
         model = ckpt['model']
