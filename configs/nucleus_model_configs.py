@@ -318,7 +318,7 @@ class FasterRCNNConfigs(object):
 
         'optimizer_type': 'SGD',
         'optimizer_params': {
-            'lr': 2e-3,  # Ram: 3e-4, Mrcnn paper: 0.02
+            'lr': 1e-3,  # Ram: 3e-4, Mrcnn paper: 0.02
             'momentum': 0.9,  # Ram: 0.9, Mrcnn paper: 0.9
             'weight_decay': 5e-4,  # Ram: 5e-4, Mrcnn paper: 1e-4
         },

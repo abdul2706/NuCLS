@@ -11,6 +11,7 @@ from torchvision.ops import boxes as box_ops
 from torchvision.ops import roi_align
 
 from torchvision.models.detection import _utils as det_utils
+from torch.nn import functional as F
 
 from torch.jit.annotations import Optional, List, Dict, Tuple
 import numpy as np
@@ -93,7 +94,7 @@ def fastrcnn_loss(
     N, num_classes = class_logits.shape
     box_regression = box_regression.reshape(N, -1, 4)
 
-    box_loss = det_utils.smooth_l1_loss(
+    box_loss = F.smooth_l1_loss(
         box_regression[sampled_pos_inds_subset, labels_pos],
         regression_targets[sampled_pos_inds_subset],
         beta=1 / 9,
@@ -615,9 +616,9 @@ def paste_and_densify_masks_in_image(masks, boxes, img_shape, padding=1):
 # noinspection LongLine
 class RoIHeads(torch.nn.Module):
     __annotations__ = {
-        'box_coder': det_utils.BoxCoder,
-        'proposal_matcher': det_utils.Matcher,
-        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
+        'box_coder': F.BoxCoder,
+        'proposal_matcher': F.Matcher,
+        'fg_bg_sampler': F.BalancedPositiveNegativeSampler,
     }
 
     def __init__(self,
