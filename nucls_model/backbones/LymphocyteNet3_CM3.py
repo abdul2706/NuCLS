@@ -193,7 +193,7 @@ class LymphocyteNet3_CM3(Module):
         #     if self.debug: print(f'[{self.module_name}]', 'features_reduced.shape =', features_reduced.shape)
         #     outs.append(features_reduced)
 
-        outs = x1[3] + x2[3]
+        outs = x1 + x2
         outs = self.block4(outs)
         # print(self.module_name, '[type(outs)][outs.shape]')
         # print(type(outs[0]), outs.shape)

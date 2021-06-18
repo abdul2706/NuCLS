@@ -233,7 +233,7 @@ class ResNet2(nn.Module):
         level4 = self.layer4(level3)
         if self.debug: print(f'[{self.module_name}][9] level4.shape -> {level4.shape}')
 
-        return (level1, level2, level3, level4)
+        return level4
 
     def init_weights(self, pretrained=None):
         print(f'{self.module_name} pretrained -> {pretrained}')

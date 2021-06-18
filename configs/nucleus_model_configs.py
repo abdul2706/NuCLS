@@ -302,7 +302,7 @@ class FasterRCNNConfigs(object):
         'print_freq': 12,  # meaningful if >= effective_batch_size / batch_size
         'window_size': None,
         'smoothing_window': 25,
-        'test_evaluate_freq': 5,
+        'test_evaluate_freq': 2,
         'test_maxDets': [1, 100] + [box_parameters['box_detections_per_img']],
 
         'n_testtime_augmentations': [0],

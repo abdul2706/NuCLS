@@ -365,7 +365,6 @@ def trainNucleusModel(
                         device=device, test_maxDets=test_maxDets,
                         crop_inference_to_fov=crop_inference_to_fov)
                 )
-                return
 
         # save training loss
         _save_training_losses(
