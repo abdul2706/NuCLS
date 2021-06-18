@@ -216,7 +216,7 @@ def inspect(obj_to_inspect, file_prefix):
 # noinspection DuplicatedCode
 def run_one_maskrcnn_fold(
         fold: int, cfg, model_root: str, model_name: str, qcd_training=True,
-        train=True, vis_test=True, n_vis=100, randomvis=True):
+        train=True, vis_test=True, n_vis=10, randomvis=True):
     
     # for obj_to_inspect in [NSD.DefaultAnnotationStyles, NSD.NucleusCategories, NSD.NameStandardization, NSD.GalleryStyles]:
     #     inspect(obj_to_inspect, obj_to_inspect.__name__)
