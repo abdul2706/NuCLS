@@ -616,9 +616,9 @@ def paste_and_densify_masks_in_image(masks, boxes, img_shape, padding=1):
 # noinspection LongLine
 class RoIHeads(torch.nn.Module):
     __annotations__ = {
-        'box_coder': F.BoxCoder,
-        'proposal_matcher': F.Matcher,
-        'fg_bg_sampler': F.BalancedPositiveNegativeSampler,
+        'box_coder': det_utils.BoxCoder,
+        'proposal_matcher': det_utils.Matcher,
+        'fg_bg_sampler': det_utils.BalancedPositiveNegativeSampler,
     }
 
     def __init__(self,
