@@ -11,13 +11,13 @@ from torchvision.ops import boxes as box_ops
 from torchvision.ops import roi_align
 
 from torchvision.models.detection import _utils as det_utils
-from torch.nn import functional as F
 
 from torch.jit.annotations import Optional, List, Dict, Tuple
 import numpy as np
 
 from TorchUtils import tensor_isin
-from nucls_model.torchvision_detection_utils.transforms import remove_degenerate_bboxes
+from nucls_model.torchvision_detection_utils.transforms import \
+    remove_degenerate_bboxes
 
 
 @torch.jit._script_if_tracing
@@ -94,7 +94,7 @@ def fastrcnn_loss(
     N, num_classes = class_logits.shape
     box_regression = box_regression.reshape(N, -1, 4)
 
-    box_loss = F.smooth_l1_loss(
+    box_loss = det_utils.smooth_l1_loss(
         box_regression[sampled_pos_inds_subset, labels_pos],
         regression_targets[sampled_pos_inds_subset],
         beta=1 / 9,
