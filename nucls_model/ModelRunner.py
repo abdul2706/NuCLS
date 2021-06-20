@@ -52,7 +52,11 @@ def load_ckp(checkpoint_path, model, optimizer=None):
 
     # optimizer state
     if optimizer is not None:
-        optimizer.load_state_dict(torch.load(checkpoint_path.replace('.ckpt', '.optim'), **extra))
+        try:
+            optimizer.load_state_dict(torch.load(checkpoint_path.replace('.ckpt', '.optim'), **extra))
+        except Exception as e:
+            print(TAG, '[load_ckp][exception]')
+            print(TAG, e)
 
     to_return = {
         'model': model,

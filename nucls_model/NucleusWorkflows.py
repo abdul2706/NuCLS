@@ -231,8 +231,10 @@ def run_one_maskrcnn_fold(
         })
 
     model_folder = opj(model_root, f'fold_{fold}')
+    print(TAG, '[model_folder]', model_folder, os.path.exists(model_folder))
     maybe_mkdir(model_folder)
     checkpoint_path = opj(model_folder, f'{model_name}.ckpt')
+    print(TAG, '[checkpoint_path]', checkpoint_path, os.path.exists(checkpoint_path))
 
     # %% --------------------------------------------------------------
     # Init model

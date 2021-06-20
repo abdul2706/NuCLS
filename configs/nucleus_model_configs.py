@@ -236,8 +236,7 @@ class FasterRCNNConfigs(object):
         # let's define what are the feature maps that we will
         # use to perform the region of interest cropping, as well as
         # the size of the crop after rescaling.
-        'box_roi_pool': MultiScaleRoIAlign(
-            featmap_names=['0'], **bbox_roialign_params),
+        'box_roi_pool': MultiScaleRoIAlign(featmap_names=['0'], **bbox_roialign_params),
     }
 
     # FIXME! --** Additional configs to improve classification!! **--

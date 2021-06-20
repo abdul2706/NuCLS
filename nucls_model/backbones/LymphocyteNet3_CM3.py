@@ -145,7 +145,7 @@ class LymphocyteNet3_CM3(nn.Module):
         self.backbone1.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
         self.backbone2.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
 
-        self.init_weights(self.pretrained)
+        # self.init_weights(self.pretrained)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
