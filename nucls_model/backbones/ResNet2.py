@@ -106,6 +106,7 @@ class Bottleneck2(nn.Module):
 
         self.module_name = 'Bottleneck2'
         self.debug = debug
+        self.planes = planes
 
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -125,6 +126,7 @@ class Bottleneck2(nn.Module):
         residual = x
 
         out = self.conv1(x)
+        out = self.kernel1(out)
         out = self.bn1(out)
         out = self.relu(out)
         out = self.dropout(out) if self.dropout is not None else out
@@ -133,11 +135,13 @@ class Bottleneck2(nn.Module):
         out = self.pool(out) if self.pool is not None else out
 
         out = self.conv2(out)
+        out = self.kernel2(out)
         out = self.bn2(out)
         out = self.relu(out)
         out = self.dropout(out) if self.dropout is not None else out
 
         out = self.conv3(out)
+        out = self.kernel3(out)
         out = self.bn3(out)
         out = self.dropout(out) if self.dropout is not None else out
 
@@ -149,6 +153,11 @@ class Bottleneck2(nn.Module):
         out = self.dropout(out) if self.dropout is not None else out
 
         return out
+
+    def get_new_kernels(self, kernel_size, std):
+        self.kernel1 = get_gaussian_filter(kernel_size=kernel_size, sigma=std, channels=self.planes)
+        self.kernel2 = get_gaussian_filter(kernel_size=kernel_size, sigma=std, channels=self.planes)
+        self.kernel3 = get_gaussian_filter(kernel_size=kernel_size, sigma=std, channels=self.planes*4)
 
 class ResNet2(nn.Module):
 
@@ -171,6 +180,7 @@ class ResNet2(nn.Module):
         self.kernel_size = 3
         self.std = 1
         self.epoch = 1
+        self.factor = 0.925
         self.out_channels=512
         block, layers = self.architectures[depth]
 
@@ -218,6 +228,7 @@ class ResNet2(nn.Module):
     def forward(self, x):
         if self.debug: print(f'[{self.module_name}][1] x.shape -> {x.shape}')
         x = self.conv1(x)
+        x = self.kernel1(x)
         if self.debug: print(f'[{self.module_name}][2] x.shape -> {x.shape}')
         x = self.bn1(x)
         x = self.relu(x)
@@ -244,11 +255,7 @@ class ResNet2(nn.Module):
     def get_new_kernels(self, epoch_count):
         if epoch_count % self.epoch == 0 and epoch_count is not 0:
             self.std *= self.factor
-        self.kernel1 = get_gaussian_filter(
-                kernel_size=self.kernel_size,
-                sigma=self.std,
-                channels=64,
-        )
+        self.kernel1 = get_gaussian_filter(kernel_size=self.kernel_size, sigma=self.std, channels=64)
 
         for child in self.layer1.children():
             child.get_new_kernels(self.kernel_size, self.std)
@@ -261,25 +268,3 @@ class ResNet2(nn.Module):
 
         for child in self.layer4.children():
             child.get_new_kernels(self.kernel_size, self.std)
-
-    # def get_new_kernels(self, epoch_count):
-    #     self.kernel1 = get_gaussian_filter(kernel_size=self.kernel_size, sigma=self.std, channels=64)
-    #     if epoch_count % 10 == 0:
-    #         self.std *= 0.925
-    #     self.kernel0 = get_gaussian_filter(kernel_size=3, sigma=self.std/1, channels=3)
-    #     self.kernel1 = get_gaussian_filter(kernel_size=3, sigma=self.std/1, channels=32)
-    #     self.kernel2= get_gaussian_filter(kernel_size=3, sigma=self.std/1, channels=64)
-    #     self.kernel3 = get_gaussian_filter(kernel_size=3, sigma=self.std/1, channels=128)
-    #     self.kernel4 = get_gaussian_filter(kernel_size=3, sigma=self.std/1, channels=256)
-
-    #     for child in self.layer1.children():
-    #         child.get_new_kernels(self.kernel_size, self.std)
-
-    #     for child in self.layer2.children():
-    #         child.get_new_kernels(self.kernel_size, self.std)
-
-    #     for child in self.layer3.children():
-    #         child.get_new_kernels(self.kernel_size, self.std)
-
-    #     for child in self.layer4.children():
-    #         child.get_new_kernels(self.kernel_size, self.std)
