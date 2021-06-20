@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
-from torch.nn import Module, Conv2d, BatchNorm2d, MaxPool2d, AvgPool2d, AdaptiveAvgPool2d, ReLU, Sequential, Linear, Dropout, Softmax
-from . import ResNet
-from . import ResNetCBAM
+from torchvision.models.utils import load_state_dict_from_url
+from . import ResNet2, ResNetCBAM
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -110,7 +109,7 @@ class Bottleneck2(nn.Module):
 
         return out
 
-class LymphocyteNet3_CM3(Module):
+class LymphocyteNet3_CM3(nn.Module):
 
     architectures = {
         18: [Bottleneck2, [64, 128, 256, 512]],
@@ -120,14 +119,16 @@ class LymphocyteNet3_CM3(Module):
         152: [Bottleneck2, [256, 512, 1024, 2048]]
     }
     
-    def __init__(self, depth, debug, **kwargs):
+    def __init__(self, depth, pretrained=False, debug=False):
         super(LymphocyteNet3_CM3, self).__init__()
 
-        self.debug = debug
         self.module_name = 'LymphocyteNet3_CM3'
+        self.depth = depth
+        self.pretrained = pretrained
+        self.debug = debug
 
-        self.backbone1 = ResNet(depth=depth, debug=False)
-        self.backbone2 = ResNetCBAM(depth=depth, debug=False)
+        self.backbone1 = ResNet2(depth=depth, pretrained=self.pretrained, debug=False)
+        self.backbone2 = ResNetCBAM(depth=depth, pretrained=self.pretrained, debug=False)
 
         block, planes = self.architectures[depth]
 
@@ -143,6 +144,8 @@ class LymphocyteNet3_CM3(Module):
 
         self.backbone1.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
         self.backbone2.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
+
+        self.init_weights(self.pretrained)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
@@ -200,9 +203,7 @@ class LymphocyteNet3_CM3(Module):
         return outs
 
     # def init_weights(self, pretrained=None):
-    #     print(f'[{self.module_name}]', 'pretrained -> ', pretrained)
-    #     if pretrained == None: return
-    #     pretrained = pretrained.split(';')
-    #     print(f'[{self.module_name}]', 'pretrained -> ', pretrained)
-    #     self.backbone1.init_weights(pretrained[0])
-    #     self.backbone2.init_weights(pretrained[0])
+    #     print(f'{self.module_name} pretrained -> {pretrained}')
+    #     if pretrained:
+    #         state_dict = load_state_dict_from_url(model_urls[f'resnet{self.depth}'], progress=True)
+    #         self.load_state_dict(state_dict, strict=False)

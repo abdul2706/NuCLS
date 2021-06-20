@@ -46,12 +46,13 @@ def load_ckp(checkpoint_path, model, optimizer=None):
         }
 
     # model state
-    model.load_state_dict(torch.load(checkpoint_path, **extra))
+    missing_keys, unexpected_keys = model.load_state_dict(torch.load(checkpoint_path, **extra), strict=False)
+    print(TAG, '[missing_keys]', missing_keys)
+    print(TAG, '[unexpected_keys]', unexpected_keys)
 
     # optimizer state
     if optimizer is not None:
-        optimizer.load_state_dict(torch.load(
-            checkpoint_path.replace('.ckpt', '.optim'), **extra))
+        optimizer.load_state_dict(torch.load(checkpoint_path.replace('.ckpt', '.optim'), **extra))
 
     to_return = {
         'model': model,
@@ -179,11 +180,11 @@ def _get_optimizer(model, optimizer_type='SGD', optimizer_params=None):
         optimizer = torch.optim.Adam(params, **optimizer_params)
     else:
         raise NotImplementedError(f'Unknown optimizer: {optimizer_type}')
+    print(TAG, '[optimizer_params]', optimizer_params)
     return optimizer
 
 
-def _freeze_detection(
-        model, optimizer_type='SGD', optimizer_params=None):
+def _freeze_detection(model, optimizer_type='SGD', optimizer_params=None):
     """Freeze all non-classification layers"""
 
     def _alter(mod, requires_grad):
@@ -212,9 +213,7 @@ def _freeze_detection(
     # See: https://gist.github.com/L0SG/2f6d81e4ad119c4f798ab81fa8d62d3f#file-freeze_example-py-L74
     # IMPORTANT: pytorch optimizer explicitly accepts parameter that
     #  requires grad see https://github.com/pytorch/pytorch/issues/679
-    optimizer = _get_optimizer(
-        model=model, optimizer_type=optimizer_type,
-        optimizer_params=optimizer_params)
+    optimizer = _get_optimizer(model=model, optimizer_type=optimizer_type, optimizer_params=optimizer_params)
 
     return model, optimizer
 

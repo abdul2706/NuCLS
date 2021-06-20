@@ -223,8 +223,8 @@ class FasterRCNNConfigs(object):
         # load a pre-trained model for classification and return
         # only the features. This is the network trunk
         # 'backbone': FeatureExtractor(**feature_extractor_params),
-        # 'backbone': LymphocyteNet3_CM3(depth=18, debug=False),
-        'backbone': ResNetCBAM(depth=18, pretrained=True, debug=False),
+        'backbone': LymphocyteNet3_CM3(depth=18, pretrained=True, debug=False),
+        # 'backbone': ResNetCBAM(depth=18, pretrained=True, debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -294,8 +294,8 @@ class FasterRCNNConfigs(object):
 
     # params for training the model
     training_params = {
-        'n_gradient_updates': 32000,  # maskrcnn paper: 160k grad. updates
-        'freeze_det_after': 30000,
+        'n_gradient_updates': 64000,  # maskrcnn paper: 160k grad. updates
+        'freeze_det_after': 62000,
         'effective_batch_size': 2,
 
         # monitoring params
