@@ -60,6 +60,7 @@ class BasicBlockCBAM(nn.Module):
 
         self.module_name = 'BasicBlockCBAM'
         self.debug = debug
+        self.inplanes = inplanes
         self.planes = planes
 
         self.conv1 = conv3x3(inplanes, planes, stride)
@@ -107,6 +108,8 @@ class BottleneckCBAM(nn.Module):
 
         self.module_name = 'BottleneckCBAM'
         self.debug = debug
+        self.inplanes = inplanes
+        self.planes = planes
 
         self.conv1 = nn.Conv2d(inplanes, planes, kernel_size=1, bias=False)
         self.bn1 = nn.BatchNorm2d(planes)
@@ -173,35 +176,33 @@ class BottleneckCBAM(nn.Module):
 class ResNetCBAM(nn.Module):
 
     architectures = {
-        18: [BasicBlockCBAM, [2, 2, 2, 2]],
-        34: [BasicBlockCBAM, [3, 4, 6, 3]],
-        50: [BottleneckCBAM, [3, 4, 6, 3]],
-        101: [BottleneckCBAM, [3, 4, 23, 3]],
-        152: [BottleneckCBAM, [3, 8, 36, 3]]
+        18: [BasicBlockCBAM, [2, 2, 2, 2], [64, 128, 256, 512]],
+        34: [BasicBlockCBAM, [3, 4, 6, 3], [64, 128, 256, 512]],
+        50: [BottleneckCBAM, [3, 4, 6, 3], [256, 512, 1024, 2048]],
+        101: [BottleneckCBAM, [3, 4, 23, 3], [256, 512, 1024, 2048]],
+        152: [BottleneckCBAM, [3, 8, 36, 3], [256, 512, 1024, 2048]],
     }
     
-    def __init__(self, depth=18, pretrained=False, debug=False):
+    def __init__(self, depth=18, use_dropout=False, pretrained=False, debug=False):
         super(ResNetCBAM, self).__init__()
 
         self.module_name = 'ResNetCBAM'
-        self.debug = debug
-        self.pretrained = pretrained
-        self.inplanes = 64
         self.depth = depth
-        self.kernel_size = 3
-        self.std = 1
-        self.epoch = 1
-        self.out_channels=512
-        block, layers = self.architectures[depth]
+        self.use_dropout = use_dropout
+        self.pretrained = pretrained
+        self.debug = debug
+        block, layers, channels = self.architectures[depth]
+        self.inplanes = channels[0]
+        self.out_channels = channels[3]
 
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64, layers[0], use_dropout=True)
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2, use_dropout=True)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2, use_dropout=True)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2, use_dropout=True)
+        self.layer1 = self._make_layer(block, channels[0], layers[0], stride=1, use_dropout=use_dropout)
+        self.layer2 = self._make_layer(block, channels[1], layers[1], stride=2, use_dropout=use_dropout)
+        self.layer3 = self._make_layer(block, channels[2], layers[2], stride=2, use_dropout=use_dropout)
+        self.layer4 = self._make_layer(block, channels[3], layers[3], stride=2, use_dropout=use_dropout)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -217,17 +218,23 @@ class ResNetCBAM(nn.Module):
         #     for param in layer.parameters():
         #         param.requires_grad = False
 
-        self.init_weights(self.pretrained)
+        self.init_weights(pretrained)
 
     def _make_layer(self, block, planes, blocks, stride=1, use_dropout=False):
         downsample = None
         if stride != 1 or self.inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
-                nn.Dropout(p=0.25),
-                nn.BatchNorm2d(planes * block.expansion),
-            )
-
+            if use_dropout:
+                downsample = nn.Sequential(
+                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                    nn.Dropout(p=0.25),
+                    nn.BatchNorm2d(planes * block.expansion),
+                )
+            else:
+                downsample = nn.Sequential(
+                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                    nn.BatchNorm2d(planes * block.expansion),
+                )
+        
         layers = [block(self.inplanes, planes, stride, downsample, use_dropout=use_dropout, debug=False)]
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
