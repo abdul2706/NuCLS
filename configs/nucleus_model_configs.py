@@ -227,8 +227,8 @@ class FasterRCNNConfigs(object):
         # 'backbone': LymphocyteNet3_CM3(depth=18, pretrained=True, debug=False),
         # 'backbone': ResNetCBAM(depth=18, pretrained=True, debug=False),
         # 'backbone': LymphocyteNet3_CM1(depth=18, use_dropout=False, pretrained=True, debug=False),
-        'backbone': LymphocyteNet3_CB1(depth=18, use_dropout=False, pretrained=True, debug=False),
-        # 'backbone': STM_RENet2(debug=False),
+        # 'backbone': LymphocyteNet3_CB1(depth=18, use_dropout=False, pretrained=True, debug=False),
+        'backbone': STM_RENet2(debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -299,7 +299,7 @@ class FasterRCNNConfigs(object):
     training_params = {
         'n_gradient_updates': 64000,  # maskrcnn paper: 160k grad. updates
         'freeze_det_after': 62000,
-        'effective_batch_size': 4,
+        'effective_batch_size': 2,
 
         # monitoring params
         'print_freq': 12,  # meaningful if >= effective_batch_size / batch_size

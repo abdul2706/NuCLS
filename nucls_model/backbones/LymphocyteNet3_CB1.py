@@ -139,24 +139,27 @@ class LymphocyteNet3_CB1(nn.Module):
         block, planes = self.architectures[depth]
         self.out_channels = planes[-1]
 
-        self.backbone1 = self.resnets[f'resnet{depth}'](pretrained)
+        resnet = self.resnets[f'resnet{depth}'](pretrained)
+        self.backbone1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
         self.backbone2 = ResNetCBAM(depth=depth, use_dropout=use_dropout, pretrained=pretrained, debug=False)
-        self.block4 = self._make_layer(block, 2 * planes[3], planes[3], 2, stride=1, use_dropout=use_dropout)
+        self.reducer1 = nn.Conv2d(512, 256, kernel_size=1)
+        self.reducer2 = nn.Conv2d(512, 256, kernel_size=1)
+        self.block4 = self._make_layer(block, planes[3], planes[3], 2, stride=1, use_dropout=use_dropout)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
-        if stride != 1 or inplanes != planes * block.expansion:
-            if use_dropout:
-                downsample = nn.Sequential(
-                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
-                    nn.Dropout(p=0.25),
-                    nn.BatchNorm2d(planes * block.expansion),
-                )
-            else:
-                downsample = nn.Sequential(
-                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
-                    nn.BatchNorm2d(planes * block.expansion),
-                )
+        # if stride != 1 or inplanes != planes * block.expansion:
+        #     if use_dropout:
+        #         downsample = nn.Sequential(
+        #             nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+        #             nn.Dropout(p=0.25),
+        #             nn.BatchNorm2d(planes * block.expansion),
+        #         )
+        #     else:
+        #         downsample = nn.Sequential(
+        #             nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+        #             nn.BatchNorm2d(planes * block.expansion),
+        #         )
 
         layers = [block(inplanes, planes, stride, downsample, use_dropout=use_dropout, debug=False)]
         for i in range(1, blocks):
@@ -168,17 +171,10 @@ class LymphocyteNet3_CB1(nn.Module):
         if self.debug: print(f'[{self.module_name}]', f'input to {self.module_name} | x.shape  =', x.shape, self.training)
         x1 = self.backbone1(x)
         x2 = self.backbone2(x)
+        x1 = self.reducer1(x1)
+        x2 = self.reducer2(x2)
 
-        # if self.debug:
-        #     print(f'[{self.module_name}]', 'output of backbone1 | ', end='')
-        #     for level_out in x1:
-        #         print(tuple(level_out.shape), end=' | ')
-        #     print(f'\n[{self.module_name}]', 'output of backbone2 | ', end='')
-        #     for level_out in x2:
-        #         print(tuple(level_out.shape), end=' | ')
-        #     print()
-
-        outs = torch.cat([x1[3] + x2], dim=1)
+        outs = torch.cat([x1, x2], dim=1)
         outs = self.block4(outs)
         # print(self.module_name, '[type(outs)][outs.shape]')
         # print(type(outs[0]), outs.shape)

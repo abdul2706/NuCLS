@@ -139,38 +139,27 @@ class LymphocyteNet3_CM1(nn.Module):
         block, planes = self.architectures[depth]
         self.out_channels = planes[-1]
 
-        self.backbone1 = self.resnets[f'resnet{depth}'](pretrained)
+        resnet = self.resnets[f'resnet{depth}'](pretrained)
+        self.backbone1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
         self.backbone2 = ResNetCBAM(depth=depth, use_dropout=use_dropout, pretrained=pretrained, debug=False)
-
-        # self.block1 = self._make_layer(block, planes[0], planes[0], 2, stride=1) # 1 block inplace of 2
-        # self.block2 = self._make_layer(block, planes[1], planes[1], 2, stride=1)
-        # self.block3 = self._make_layer(block, planes[2], planes[2], 2, stride=1)
-        self.block4 = self._make_layer(block, planes[3], planes[3], 2, stride=1, use_dropout=True)
-
-        # self.blocks = [self.block1, self.block2, self.block3, self.block4]
-        self.blocks = [self.block4]
-
-        # self.backbone1.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
-        # self.backbone2.load_state_dict(model_zoo.load_url(model_urls[f'resnet{depth}'], model_dir='.'), strict=False)
-        # self.init_weights(self.pretrained)
+        self.block4 = self._make_layer(block, planes[3], planes[3], 2, stride=1, use_dropout=use_dropout)
 
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
-        if stride != 1 or inplanes != planes * block.expansion:
-            if use_dropout:
-                downsample = nn.Sequential(
-                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
-                    nn.Dropout(p=0.25),
-                    nn.BatchNorm2d(planes * block.expansion),
-                )
-            else:
-                downsample = nn.Sequential(
-                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
-                    nn.BatchNorm2d(planes * block.expansion),
-                )
+        # if stride != 1 or inplanes != planes * block.expansion:
+        #     if use_dropout:
+        #         downsample = nn.Sequential(
+        #             nn.Conv2d(inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+        #             nn.Dropout(p=0.25),
+        #             nn.BatchNorm2d(planes * block.expansion),
+        #         )
+        #     else:
+        #         downsample = nn.Sequential(
+        #             nn.Conv2d(inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+        #             nn.BatchNorm2d(planes * block.expansion),
+        #         )
 
         layers = [block(inplanes, planes, stride, downsample, use_dropout=use_dropout, debug=False)]
-        # inplanes = planes * block.expansion
         for i in range(1, blocks):
             layers.append(block(planes, planes, use_dropout=use_dropout, debug=False))
 
@@ -180,43 +169,9 @@ class LymphocyteNet3_CM1(nn.Module):
         if self.debug: print(f'[{self.module_name}]', f'input to {self.module_name} | x.shape  =', x.shape, self.training)
         x1 = self.backbone1(x)
         x2 = self.backbone2(x)
-        # x3 = self.backbone3(x)
 
-        # if self.debug:
-        #     print(f'[{self.module_name}]', 'output of backbone1 | ', end='')
-        #     for level_out in x1:
-        #         print(tuple(level_out.shape), end=' | ')
-        #     print(f'\n[{self.module_name}]', 'output of backbone2 | ', end='')
-        #     for level_out in x2:
-        #         print(tuple(level_out.shape), end=' | ')
-        #     print()
-
-        # features_merged = []
-        # # feature concatenation
-        # for i in range(1):
-        #     if self.debug: print(f'[{self.module_name}]', i)
-        #     features_add = x1[i] + x2[i]
-        #     if self.debug: print(f'[{self.module_name}]', 'features_add.shape =', features_add.shape)
-        #     features_merged.append(features_add)
-
-        # outs = []
-        # # feature reduction
-        # for i in range(1):
-        #     ith_features = features_merged[i]
-        #     if self.debug: print(f'[{self.module_name}]', i, ith_features.shape)
-        #     ith_block = self.blocks[i]
-        #     features_reduced = ith_block(ith_features)
-        #     if self.debug: print(f'[{self.module_name}]', 'features_reduced.shape =', features_reduced.shape)
-        #     outs.append(features_reduced)
-
-        outs = x1[3] + x2
+        outs = x1 + x2
         outs = self.block4(outs)
         # print(self.module_name, '[type(outs)][outs.shape]')
         # print(type(outs[0]), outs.shape)
         return outs
-
-    # def init_weights(self, pretrained=None):
-    #     print(f'{self.module_name} pretrained -> {pretrained}')
-    #     if pretrained:
-    #         state_dict = load_state_dict_from_url(model_urls[f'resnet{self.depth}'], progress=True)
-    #         self.load_state_dict(state_dict, strict=False)

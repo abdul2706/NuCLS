@@ -176,12 +176,13 @@ class STM_RENet2(nn.Module):
         
         self.module_name = 'STM_RENet2'
         self.debug = debug
+        self.out_channels = 512
         
-        self.blockA = STM_RENet_BlockA(3, 64, debug=self.debug)
-        self.layer1 = STM_RENet2_Block(64, 256, [86, 85, 85], debug=False)
-        self.layer2 = STM_RENet2_Block(256, 512, [172, 170, 170], debug=False)
-        self.layer3 = STM_RENet2_Block(512, 1024, [342, 341, 341], debug=False)
-        self.layer4 = STM_RENet2_Block(1024, 2048, [684, 682, 682], debug=False)
+        self.blockA = STM_RENet_BlockA(3, 32, debug=self.debug)
+        self.layer1 = STM_RENet2_Block(32, 64, [22, 21, 21], debug=False)
+        self.layer2 = STM_RENet2_Block(64, 128, [43, 43, 42], debug=False)
+        self.layer3 = STM_RENet2_Block(128, 256, [86, 85, 85], debug=False)
+        self.layer4 = STM_RENet2_Block(256, 512, [172, 170, 170], debug=False)
 
     def forward(self, x):
         if self.debug: print(f'[{self.module_name}] x = {x.shape}')
@@ -200,7 +201,7 @@ class STM_RENet2(nn.Module):
         layer4 = self.layer4(layer3)
         if self.debug: print(f'[{self.module_name}][layer4] layer4 = {layer4.shape}')
 
-        return (layer1, layer2, layer3, layer4)
+        return layer4
 
     # def init_weights(self, pretrained=None):
     #     print(f'{self.module_name} pretrained -> {pretrained}')
