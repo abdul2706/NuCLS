@@ -146,11 +146,17 @@ class LymphocyteNet3_CB1(nn.Module):
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
         if stride != 1 or inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False),
-                nn.Dropout(p=0.35),
-                nn.BatchNorm2d(planes),
-            )
+            if use_dropout:
+                downsample = nn.Sequential(
+                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                    nn.Dropout(p=0.25),
+                    nn.BatchNorm2d(planes * block.expansion),
+                )
+            else:
+                downsample = nn.Sequential(
+                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                    nn.BatchNorm2d(planes * block.expansion),
+                )
 
         layers = [block(inplanes, planes, stride, downsample, use_dropout=use_dropout, debug=False)]
         for i in range(1, blocks):

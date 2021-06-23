@@ -157,11 +157,17 @@ class LymphocyteNet3_CM1(nn.Module):
     def _make_layer(self, block, inplanes, planes, blocks, stride=1, use_dropout=False):
         downsample = None
         if stride != 1 or inplanes != planes * block.expansion:
-            downsample = nn.Sequential(
-                nn.Conv2d(inplanes, planes, kernel_size=1, stride=stride, bias=False),
-                nn.Dropout(p=0.35),
-                nn.BatchNorm2d(planes),
-            )
+            if use_dropout:
+                downsample = nn.Sequential(
+                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                    nn.Dropout(p=0.25),
+                    nn.BatchNorm2d(planes * block.expansion),
+                )
+            else:
+                downsample = nn.Sequential(
+                    nn.Conv2d(self.inplanes, planes * block.expansion, kernel_size=1, stride=stride, bias=False),
+                    nn.BatchNorm2d(planes * block.expansion),
+                )
 
         layers = [block(inplanes, planes, stride, downsample, use_dropout=use_dropout, debug=False)]
         # inplanes = planes * block.expansion
@@ -203,7 +209,7 @@ class LymphocyteNet3_CM1(nn.Module):
         #     if self.debug: print(f'[{self.module_name}]', 'features_reduced.shape =', features_reduced.shape)
         #     outs.append(features_reduced)
 
-        outs = x1 + x2
+        outs = x1[3] + x2
         outs = self.block4(outs)
         # print(self.module_name, '[type(outs)][outs.shape]')
         # print(type(outs[0]), outs.shape)

@@ -1,3 +1,4 @@
+from nucls_model.backbones.STM_RENet2 import STM_RENet2
 from nucls_model.backbones.ResNet2 import ResNet2
 import os
 from os.path import join as opj
@@ -223,8 +224,11 @@ class FasterRCNNConfigs(object):
         # load a pre-trained model for classification and return
         # only the features. This is the network trunk
         # 'backbone': FeatureExtractor(**feature_extractor_params),
-        'backbone': LymphocyteNet3_CM3(depth=18, pretrained=True, debug=False),
+        # 'backbone': LymphocyteNet3_CM3(depth=18, pretrained=True, debug=False),
         # 'backbone': ResNetCBAM(depth=18, pretrained=True, debug=False),
+        # 'backbone': LymphocyteNet3_CM1(depth=18, use_dropout=False, pretrained=True, debug=False),
+        'backbone': LymphocyteNet3_CB1(depth=18, use_dropout=False, pretrained=True, debug=False),
+        # 'backbone': STM_RENet2(debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -295,13 +299,13 @@ class FasterRCNNConfigs(object):
     training_params = {
         'n_gradient_updates': 64000,  # maskrcnn paper: 160k grad. updates
         'freeze_det_after': 62000,
-        'effective_batch_size': 2,
+        'effective_batch_size': 4,
 
         # monitoring params
         'print_freq': 12,  # meaningful if >= effective_batch_size / batch_size
         'window_size': None,
         'smoothing_window': 25,
-        'test_evaluate_freq': 2,
+        'test_evaluate_freq': 1,
         'test_maxDets': [1, 100] + [box_parameters['box_detections_per_img']],
 
         'n_testtime_augmentations': [0],
