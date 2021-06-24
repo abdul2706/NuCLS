@@ -4,7 +4,8 @@ import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from torchvision.models.utils import load_state_dict_from_url
 from torchvision import models
-from . import ResNetCBAM
+import sys
+from . import ResNetCBAM, ResNet2
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -128,19 +129,22 @@ class LymphocyteNet3_CB1(nn.Module):
         'resnet152': models.resnet152,
     }
 
-    def __init__(self, depth, use_dropout=False, pretrained=False, debug=False):
+    # def __init__(self, depth, use_dropout=False, pretrained=False, debug=False):
+    def __init__(self, depth=18, use_dropout=False, pretrained=False, conv_type='strided', debug=False):
         super(LymphocyteNet3_CB1, self).__init__()
 
         self.module_name = 'LymphocyteNet3_CB1'
         self.depth = depth
         self.use_dropout = use_dropout
         self.pretrained = pretrained
+        self.conv_type = conv_type
         self.debug = debug
         block, planes = self.architectures[depth]
         self.out_channels = planes[-1]
 
-        resnet = self.resnets[f'resnet{depth}'](pretrained)
-        self.backbone1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
+        # resnet = self.resnets[f'resnet{depth}'](pretrained)
+        # self.backbone1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
+        self.backbone1 = ResNet2(depth=depth, use_dropout=use_dropout, pretrained=pretrained, conv_type=conv_type, debug=debug)
         self.backbone2 = ResNetCBAM(depth=depth, use_dropout=use_dropout, pretrained=pretrained, debug=False)
         self.reducer1 = nn.Conv2d(512, 256, kernel_size=1)
         self.reducer2 = nn.Conv2d(512, 256, kernel_size=1)
@@ -179,3 +183,11 @@ class LymphocyteNet3_CB1(nn.Module):
         # print(self.module_name, '[type(outs)][outs.shape]')
         # print(type(outs[0]), outs.shape)
         return outs
+
+if __name__ == '__main__':
+    x = torch.rand((2, 3, 224, 224))
+    print('[x]\n', x.shape)
+    model = LymphocyteNet3_CB1(depth=18, use_dropout=False, pretrained=False, conv_type='pooling', debug=False)
+    print('[model]\n', model)
+    y = model(x)
+    print('[y]\n', y.shape)
