@@ -261,10 +261,10 @@ class ResNet2(nn.Module):
                     nn.BatchNorm2d(planes * block.expansion),
                 )
 
-        layers = [block(self.inplanes, planes, stride, downsample, use_dropout=use_dropout, conv_type=conv_type, debug=True)]
+        layers = [block(self.inplanes, planes, stride, downsample, use_dropout=use_dropout, conv_type=conv_type, debug=False)]
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes, use_dropout=use_dropout, conv_type=conv_type, debug=True))
+            layers.append(block(self.inplanes, planes, use_dropout=use_dropout, conv_type=conv_type, debug=False))
 
         return nn.Sequential(*layers)
 
