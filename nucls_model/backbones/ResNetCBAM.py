@@ -118,8 +118,8 @@ class BottleneckCBAM(nn.Module):
         self.bn2a = nn.BatchNorm2d(planes)
         self.conv2b = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False) ### additional layer added
         self.bn2b = nn.BatchNorm2d(planes)
-        self.conv2c = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)  ###### additional layer added
-        self.bn2c = nn.BatchNorm2d(planes)
+        # self.conv2c = nn.Conv2d(planes, planes, kernel_size=3, stride=1, padding=1, bias=False)  ###### additional layer added
+        # self.bn2c = nn.BatchNorm2d(planes)
 
         self.conv3 = nn.Conv2d(planes, planes * 4, kernel_size=1, bias=False)
         self.bn3 = nn.BatchNorm2d(planes * 4)
@@ -182,6 +182,8 @@ class ResNetCBAM(nn.Module):
         101: [BottleneckCBAM, [3, 4, 23, 3], [256, 512, 1024, 2048]],
         152: [BottleneckCBAM, [3, 8, 36, 3], [256, 512, 1024, 2048]],
     }
+
+    boosting_types = ['']
     
     def __init__(self, depth=18, use_dropout=False, pretrained=False, debug=False):
         super(ResNetCBAM, self).__init__()
@@ -191,7 +193,7 @@ class ResNetCBAM(nn.Module):
         self.use_dropout = use_dropout
         self.pretrained = pretrained
         self.debug = debug
-        block, layers, channels = self.architectures[depth]
+        block, blocks, channels = self.architectures[depth]
         self.inplanes = channels[0]
         self.out_channels = channels[3]
 
@@ -199,10 +201,10 @@ class ResNetCBAM(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, channels[0], layers[0], stride=1, use_dropout=use_dropout)
-        self.layer2 = self._make_layer(block, channels[1], layers[1], stride=2, use_dropout=use_dropout)
-        self.layer3 = self._make_layer(block, channels[2], layers[2], stride=2, use_dropout=use_dropout)
-        self.layer4 = self._make_layer(block, channels[3], layers[3], stride=2, use_dropout=use_dropout)
+        self.layer1 = self._make_layer(block, channels[0], blocks[0], stride=1, use_dropout=use_dropout)
+        self.layer2 = self._make_layer(block, channels[1], blocks[1], stride=2, use_dropout=use_dropout)
+        self.layer3 = self._make_layer(block, channels[2], blocks[2], stride=2, use_dropout=use_dropout)
+        self.layer4 = self._make_layer(block, channels[3], blocks[3], stride=2, use_dropout=use_dropout)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
