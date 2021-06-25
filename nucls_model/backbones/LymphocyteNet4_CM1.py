@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import torch.utils.model_zoo as model_zoo
 from torchvision.models.utils import load_state_dict_from_url
 from torchvision import models
-from . import ResNetCBAM
+from . import ResNetCBAM, STM_RENet2
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -110,7 +110,7 @@ class Bottleneck2(nn.Module):
 
         return out
 
-class LymphocyteNet3_CM1(nn.Module):
+class LymphocyteNet4_CM1(nn.Module):
 
     architectures = {
         18: [Bottleneck2, [64, 128, 256, 512]],
@@ -120,18 +120,10 @@ class LymphocyteNet3_CM1(nn.Module):
         152: [Bottleneck2, [256, 512, 1024, 2048]]
     }
 
-    resnets = {
-        'resnet18': models.resnet18,
-        'resnet34': models.resnet34,
-        'resnet50': models.resnet50,
-        'resnet101': models.resnet101,
-        'resnet152': models.resnet152,
-    }
-
     def __init__(self, depth, use_dropout=False, pretrained=False, debug=False):
-        super(LymphocyteNet3_CM1, self).__init__()
+        super(LymphocyteNet4_CM1, self).__init__()
 
-        self.module_name = 'LymphocyteNet3_CM1'
+        self.module_name = 'LymphocyteNet4_CM1'
         self.depth = depth
         self.use_dropout = use_dropout
         self.pretrained = pretrained
@@ -139,8 +131,7 @@ class LymphocyteNet3_CM1(nn.Module):
         block, planes = self.architectures[depth]
         self.out_channels = planes[-1]
 
-        resnet = self.resnets[f'resnet{depth}'](pretrained)
-        self.backbone1 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool, resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4)
+        self.backbone1 = STM_RENet2(debug=False)
         self.backbone2 = ResNetCBAM(depth=depth, use_dropout=use_dropout, pretrained=pretrained, debug=False)
         self.block4 = self._make_layer(block, planes[3], planes[3], 2, stride=1, use_dropout=use_dropout)
 
