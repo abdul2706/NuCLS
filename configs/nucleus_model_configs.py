@@ -228,7 +228,8 @@ class FasterRCNNConfigs(object):
         # 'backbone': ResNetCBAM(depth=18, pretrained=True, debug=False),
         # 'backbone': LymphocyteNet3_CM1(depth=18, use_dropout=False, pretrained=True, debug=False),
         # 'backbone': LymphocyteNet3_CB1(depth=18, use_dropout=False, pretrained=True, debug=False),
-        'backbone': STM_RENet2(debug=False),
+        'backbone': LymphocyteNet4_CM1(depth=18, use_dropout=False, pretrained=True, debug=False),
+        # 'backbone': STM_RENet2(debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 

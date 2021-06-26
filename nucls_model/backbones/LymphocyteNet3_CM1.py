@@ -128,7 +128,7 @@ class LymphocyteNet3_CM1(nn.Module):
         'resnet152': models.resnet152,
     }
 
-    def __init__(self, depth, use_dropout=False, pretrained=False, debug=False):
+    def __init__(self, depth=18, use_dropout=False, pretrained=False, conv_type='strided', debug=False):
         super(LymphocyteNet3_CM1, self).__init__()
 
         self.module_name = 'LymphocyteNet3_CM1'
