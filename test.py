@@ -61,8 +61,14 @@ def test():
     print(TAG, '[NucleusDatasetMask created as test_dataset]')
     data_loader_test = DataLoader(dataset=test_dataset, **cfg.MaskDatasetConfigs.test_loader)
     print(TAG, '[DataLoader created as data_loader_test]')
+    sample = next(iter(test_dataset))
+    print(TAG, '[sample]')
+    print(sample)
+    output = model(sample)
+    print(TAG, '[output]')
+    print(output)
 
-    eval_results = evaluateNucleusModel(model, data_loader_test, checkpoint_path=checkpoint_path)
+    # eval_results = evaluateNucleusModel(model, data_loader_test, checkpoint_path=checkpoint_path)
     # for i, eval_result in enumerate(eval_results):
     #     for key, value in eval_result.items():
     #         # print(TAG, type(eval_results[i][key]), key)
