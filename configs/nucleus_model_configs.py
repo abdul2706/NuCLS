@@ -232,6 +232,7 @@ class FasterRCNNConfigs(object):
         # 'backbone': LymphocyteNet3_CM1(depth=18, use_dropout=False, pretrained=True, debug=False),
         # 'backbone': LymphocyteNet3_CB1(depth=18, use_dropout=False, pretrained=True, debug=False),
         # 'backbone': LymphocyteNet4_CM1(depth=18, use_dropout=False, pretrained=True, debug=False),
+        'backbone': LymphocyteNet5_RE1(depth=18, use_dropout=False, pretrained=True, debug=False),
         'num_classes': num_classes,
         'ignore_label': ignore_label,
 
@@ -512,4 +513,3 @@ class PaperTablesConfigs(object):
     supercateg_acc_cols.update(supercateg_acc_meta_cols)
     supercateg_acc_cols.update(supercateg_mcc_cols)
     supercateg_acc_cols.update(supercateg_auroc_cols)
-
